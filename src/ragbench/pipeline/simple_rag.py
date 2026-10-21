@@ -19,7 +19,7 @@ def run_rag(
     rerank_top_n: int = 3,
     embed_kind: str = "openai"
 ) -> Dict[str, Any]:
-    
+
     if embed_kind == "openai":
         embedder = OpenAIEmbeddingProvider(model=embed_model)
     elif embed_kind == "local":
@@ -64,6 +64,17 @@ def run_rag(
             "total_retrieval": t_embed_q + t_retrieve + t_rerank,
         },
         "dense_results": [{"text": c[0], "payload": c[1], "score": c[2]} for c in candidates],
+        # NEW: surface the reranked items (with scores) so the per-query record
+        # can show the before/after of reranking. base_score = original dense score.
+        "reranked_results": [
+            {
+                "text": it.text,
+                "payload": it.payload,
+                "dense_score": it.base_score,
+                "rerank_score": it.rerank_score,
+            }
+            for it in reranked
+        ],
         "context_chunks": context_chunks,
         "top_dense_score": candidates[0][2] if candidates else 0,
         "top_rerank_score": reranked[0].rerank_score if reranked else None
