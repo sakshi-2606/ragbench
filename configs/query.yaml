@@ -1,0 +1,20 @@
+# Config for a single /query run.
+# Values mirror what run_benchmark.py currently hardcodes, so behaviour is unchanged.
+seed: 42
+
+retrieval:
+  collection: demo_k8s_helm        # your existing indexed demo collection
+  embed_model: text-embedding-3-small
+  embed_kind: openai               # "openai" or "local"
+  dense_top_k: 10
+
+rerank:
+  enabled: true
+  model: BAAI/bge-reranker-base
+  top_n: 3
+
+answer:
+  model: gpt-4.1-mini
+
+judge:
+  model: gpt-4.1-mini
