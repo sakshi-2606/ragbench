@@ -1,13 +1,12 @@
 import time
-from typing import List, Dict, Any
+from typing import Dict, Any
 
-from ragbench.store.qdrant_store import QdrantStore
-from ragbench.embed.providers import OpenAIEmbeddingProvider
-from ragbench.embed.local_provider import LocalSTEmbeddingProvider
-from ragbench.rerank.providers import CrossEncoderReranker
+from ragbench.utils.resources import get_embedder, get_store, get_reranker
+
 
 def ms():
     return int(time.perf_counter() * 1000)
+
 
 def run_rag(
     question: str,
@@ -20,15 +19,9 @@ def run_rag(
     embed_kind: str = "openai"
 ) -> Dict[str, Any]:
 
-    if embed_kind == "openai":
-        embedder = OpenAIEmbeddingProvider(model=embed_model)
-    elif embed_kind == "local":
-        embedder = LocalSTEmbeddingProvider(embed_model)
-    else:
-        raise ValueError("embed_kind must be 'openai' or 'local'")
-
-    # embedder = OpenAIEmbeddingProvider(model=embed_model)
-    store = QdrantStore(collection_name=collection, vector_size=embedder.dim)
+    # resources are now built once and reused (see utils/resources.py)
+    embedder = get_embedder(embed_kind, embed_model)
+    store = get_store(collection, embedder.dim)
 
     t1 = ms()
     qvec = embedder.embed_query(question)
@@ -44,7 +37,7 @@ def run_rag(
     t_rerank = 0
     reranked = []
     if use_rerank:
-        rr = CrossEncoderReranker(model=rerank_model)
+        rr = get_reranker(rerank_model)
         t3 = ms()
         reranked = rr.rerank(question, candidates, top_n=rerank_top_n)
         t_rerank = ms() - t3
@@ -64,7 +57,7 @@ def run_rag(
             "total_retrieval": t_embed_q + t_retrieve + t_rerank,
         },
         "dense_results": [{"text": c[0], "payload": c[1], "score": c[2]} for c in candidates],
-        # NEW: surface the reranked items (with scores) so the per-query record
+        # surface the reranked items (with scores) so the per-query record
         # can show the before/after of reranking. base_score = original dense score.
         "reranked_results": [
             {
