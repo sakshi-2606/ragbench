@@ -1,0 +1,20 @@
+# Config for the local bge-small embedding variant (the comparison arm).
+# Identical to configs/query.yaml EXCEPT the retrieval embedder + its collection.
+seed: 42
+
+retrieval:
+  collection: demo_k8s_helm_bge          # separate collection (bge is 384-dim)
+  embed_model: BAAI/bge-small-en-v1.5
+  embed_kind: local                      # uses LocalSTEmbeddingProvider
+  dense_top_k: 10
+
+rerank:
+  enabled: true
+  model: BAAI/bge-reranker-base
+  top_n: 3
+
+answer:
+  model: gpt-4.1-mini
+
+judge:
+  model: gpt-4.1-mini
