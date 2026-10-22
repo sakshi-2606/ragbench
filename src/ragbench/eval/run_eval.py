@@ -1,23 +1,17 @@
 """
 End-to-end eval orchestration.
 
-Lifts the scoring + aggregation loop out of run_benchmark.py into one reusable
-function that returns a structured EvalReport (and optionally writes result
-files for the dashboard to read later).
-
-Items are loaded via load_evalset(), which validates tags and verifies the
-dataset's content hash against its manifest — so every report is stamped with
-the exact frozen dataset (version + hash) it ran on. For each item it calls
-run_query(), then scores it exactly as run_benchmark.py does.
+Loads a frozen, tagged eval set (validating tags + hash), runs run_query() on
+each item, scores it exactly as run_benchmark.py does, then rolls the results
+up into overall aggregates AND per-slice / per-difficulty breakdowns.
 """
 
 from __future__ import annotations
 
-import json
 import os
 from datetime import datetime
 from statistics import mean
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from ragbench.bench.schema import BenchItem
 from ragbench.pipeline.run_query import run_query
@@ -27,6 +21,7 @@ from ragbench.utils.eval_schema import (
     EvalItemResult,
     EvalAggregates,
     EvalReport,
+    GroupMetrics,
 )
 
 
@@ -60,29 +55,60 @@ def _score_item(bi: BenchItem, record) -> EvalItemResult:
     )
 
 
-def _rate(flags: List[bool]) -> float:
+def _rate(flags) -> float:
     """Mean over a subset; 0.0 when the subset is empty (matches run_benchmark)."""
+    flags = list(flags)
     return float(mean(1 if f else 0 for f in flags)) if flags else 0.0
 
 
-def _aggregate(items: List[EvalItemResult]) -> EvalAggregates:
+def _opt_rate(flags) -> Optional[float]:
+    """Like _rate, but None when the subset is empty — so a metric that doesn't
+    apply to a group is omitted rather than shown as 0."""
+    flags = list(flags)
+    return _rate(flags) if flags else None
+
+
+def _group_metrics(items: List[EvalItemResult]) -> GroupMetrics:
+    """Metrics for an arbitrary group of results (a slice, or a difficulty)."""
     answerable = [it for it in items if it.is_answerable]
     unanswerable = [it for it in items if not it.is_answerable]
-
-    return EvalAggregates(
-        n_items=len(items),
-        n_answerable=len(answerable),
-        n_unanswerable=len(unanswerable),
-        faithfulness_rate=_rate([bool(it.faithful) for it in items]),
-        answer_success_rate=_rate([it.answer_success for it in answerable]),
-        false_refusal_rate=_rate([it.false_refusal for it in answerable]),
-        hallucination_rate=_rate([it.hallucination for it in unanswerable]),
-        correct_refusal_rate=_rate([it.correct_refusal for it in unanswerable]),
+    return GroupMetrics(
+        n=len(items),
+        faithfulness_rate=_rate(bool(it.faithful) for it in items),
+        answer_success_rate=_opt_rate(it.answer_success for it in answerable),
+        false_refusal_rate=_opt_rate(it.false_refusal for it in answerable),
+        hallucination_rate=_opt_rate(it.hallucination for it in unanswerable),
+        correct_refusal_rate=_opt_rate(it.correct_refusal for it in unanswerable),
         avg_total_latency_ms=(
             float(mean(it.record.metrics.latency.total_ms for it in items)) if items else 0.0
         ),
         total_cost_usd=sum(it.record.metrics.total_cost_usd for it in items),
     )
+
+
+def _aggregate(items: List[EvalItemResult]) -> EvalAggregates:
+    answerable = [it for it in items if it.is_answerable]
+    unanswerable = [it for it in items if not it.is_answerable]
+    return EvalAggregates(
+        n_items=len(items),
+        n_answerable=len(answerable),
+        n_unanswerable=len(unanswerable),
+        faithfulness_rate=_rate(bool(it.faithful) for it in items),
+        answer_success_rate=_rate(it.answer_success for it in answerable),
+        false_refusal_rate=_rate(it.false_refusal for it in answerable),
+        hallucination_rate=_rate(it.hallucination for it in unanswerable),
+        correct_refusal_rate=_rate(it.correct_refusal for it in unanswerable),
+        avg_total_latency_ms=(
+            float(mean(it.record.metrics.latency.total_ms for it in items)) if items else 0.0
+        ),
+        total_cost_usd=sum(it.record.metrics.total_cost_usd for it in items),
+    )
+
+
+def _breakdown(items: List[EvalItemResult], key) -> Dict[str, GroupMetrics]:
+    """Group items by a key function (slice or difficulty) and compute metrics."""
+    names = sorted({key(it) for it in items if key(it) is not None})
+    return {name: _group_metrics([it for it in items if key(it) == name]) for name in names}
 
 
 def _persist(report: EvalReport, persist_dir: str) -> None:
@@ -117,6 +143,8 @@ def run_eval(
         dataset_hash=meta.get("hash"),
         config_version=config.version,
         aggregates=_aggregate(items),
+        by_slice=_breakdown(items, lambda it: it.slice),
+        by_difficulty=_breakdown(items, lambda it: it.difficulty),
         items=items,
     )
 
