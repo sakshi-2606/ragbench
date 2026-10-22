@@ -1,8 +1,7 @@
-"""Batch 1 (bootstrap CI) — compute CIs on your latest eval run and show them.
+"""Batch 2 (bootstrap CI) — compute Wilson CIs on your latest eval run and show them.
 Run from repo root:  python scripts/add_confidence.py
-Offline — no Qdrant/API. Reads the latest results/eval_*.json, prints each
-rate with its 95% CI, and writes a 'confidence' block back into that file
-(so the dashboard can show the intervals in the next batch).
+Offline — no Qdrant/API. Reads the latest results/eval_*.json, prints each rate
+with its 95% CI, and writes a 'confidence' block back into that file.
 """
 
 import glob
@@ -32,14 +31,14 @@ def main():
     with open(path) as f:
         report = json.load(f)
 
-    conf = compute_confidence(report["items"], n_boot=1000, ci=0.95, seed=42)
+    conf = compute_confidence(report["items"], ci=0.95)
     report["confidence"] = conf
 
     with open(path, "w") as f:
         json.dump(report, f, indent=2)
 
     print("file:", path)
-    print(f"({conf['n_boot']} resamples, {int(conf['ci']*100)}% CI)")
+    print(f"(method: {conf['method']}, {int(conf['ci'] * 100)}% CI)")
     show("aggregate", conf["aggregate"])
     for s, block in conf["by_slice"].items():
         show(f"slice: {s}", block)
