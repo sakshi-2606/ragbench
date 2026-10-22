@@ -2,11 +2,11 @@
 Confidence intervals for eval metrics.
 
 Two methods, each for what it's good at:
-  - Wilson score interval  -> single PROPORTIONS (rates). Analytic, and unlike the
-    percentile bootstrap it stays honest at the boundaries: 8/8 successes gives a
-    wide interval like [0.68, 1.0], not a degenerate [1.0, 1.0].
+  - Wilson score interval  -> single PROPORTIONS (rates). Analytic, honest at the
+    boundaries: 8/8 gives a wide interval like [0.68, 1.0], not [1.0, 1.0].
   - Bootstrap               -> things without a clean closed form: paired metric
-    DIFFERENCES (config A vs B on the same items), and composite metrics.
+    DIFFERENCES (config A vs B on the same items) for rates and for continuous
+    values like latency/cost.
 
 Both capture *sampling* uncertainty (which items we happened to include). Neither
 captures the generator's run-to-run nondeterminism — that needs repeated runs.
@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import math
 import random
-from statistics import NormalDist
+from statistics import NormalDist, mean
 from typing import List, Optional
 
 
@@ -26,8 +26,7 @@ def wilson_ci(flags, ci: float = 0.95) -> Optional[dict]:
     n = len(flags)
     if n == 0:
         return None
-    k = sum(flags)
-    p = k / n
+    p = sum(flags) / n
     z = NormalDist().inv_cdf((1 + ci) / 2)
     z2 = z * z
     denom = 1 + z2 / n
@@ -38,8 +37,7 @@ def wilson_ci(flags, ci: float = 0.95) -> Optional[dict]:
 
 
 def bootstrap_ci(flags, n_boot: int = 1000, ci: float = 0.95, seed: int = 42) -> Optional[dict]:
-    """Percentile bootstrap CI for a rate. (Kept for composite metrics; prefer
-    wilson_ci for plain proportions.)"""
+    """Percentile bootstrap CI for a rate. (Prefer wilson_ci for plain proportions.)"""
     flags = [1 if f else 0 for f in flags]
     n = len(flags)
     if n == 0:
@@ -48,24 +46,23 @@ def bootstrap_ci(flags, n_boot: int = 1000, ci: float = 0.95, seed: int = 42) ->
     rng = random.Random(seed)
     means = []
     for _ in range(n_boot):
-        total = sum(flags[rng.randrange(n)] for _ in range(n))
-        means.append(total / n)
+        means.append(sum(flags[rng.randrange(n)] for _ in range(n)) / n)
     means.sort()
     return {"point": point, "low": means[int((1 - ci) / 2 * n_boot)],
             "high": means[int((1 + ci) / 2 * n_boot) - 1], "n": n, "method": "bootstrap"}
 
 
-def paired_diff_ci(flags_a, flags_b, n_boot: int = 1000, ci: float = 0.95, seed: int = 42) -> Optional[dict]:
-    """Paired bootstrap CI for the difference (B - A) of two rates on the SAME
-    items. Resamples item indices once per iteration and computes both rates on
-    that resample, so item variation cancels. `crosses_zero` => not distinguishable
-    from noise."""
-    a = [1 if f else 0 for f in flags_a]
-    b = [1 if f else 0 for f in flags_b]
+def _paired(a, b, n_boot, ci, seed, binary):
+    if binary:
+        a = [1 if f else 0 for f in a]
+        b = [1 if f else 0 for f in b]
+    else:
+        a = [float(x) for x in a]
+        b = [float(x) for x in b]
     n = len(a)
     if n == 0 or len(b) != n:
         return None
-    point = sum(b) / n - sum(a) / n
+    point = mean(b) - mean(a)
     rng = random.Random(seed)
     diffs = []
     for _ in range(n_boot):
@@ -77,8 +74,18 @@ def paired_diff_ci(flags_a, flags_b, n_boot: int = 1000, ci: float = 0.95, seed:
     return {"diff": point, "low": lo, "high": hi, "n": n, "crosses_zero": lo <= 0 <= hi, "method": "bootstrap"}
 
 
+def paired_diff_ci(flags_a, flags_b, n_boot: int = 1000, ci: float = 0.95, seed: int = 42) -> Optional[dict]:
+    """Paired bootstrap CI for the difference (B - A) of two RATES on the same items."""
+    return _paired(flags_a, flags_b, n_boot, ci, seed, binary=True)
+
+
+def paired_mean_diff_ci(values_a, values_b, n_boot: int = 1000, ci: float = 0.95, seed: int = 42) -> Optional[dict]:
+    """Paired bootstrap CI for the difference (B - A) of two MEANS of continuous
+    values (e.g. latency, cost) on the same items."""
+    return _paired(values_a, values_b, n_boot, ci, seed, binary=False)
+
+
 # --- confidence block for a whole eval (aggregate + per-slice + per-difficulty) ---
-# Single proportions use Wilson.
 
 _METRICS = [
     ("faithfulness_rate", "all", "faithful"),
@@ -101,7 +108,6 @@ def _group_cis(items: List[dict], ci: float) -> dict:
 
 
 def compute_confidence(items: List[dict], ci: float = 0.95) -> dict:
-    """items: list of per-item result dicts (the EvalReport 'items' shape)."""
     slices = sorted({it["slice"] for it in items if it.get("slice")})
     diffs = sorted({it["difficulty"] for it in items if it.get("difficulty")})
     return {
