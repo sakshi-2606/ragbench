@@ -25,3 +25,5 @@
 {"text": "Terraform input variables are declared with variable blocks and can be set via tfvars files, -var flags, or environment variables.", "source": "terraform-docs"}
 {"text": "Unlike Helm, Terraform does not use a values.yaml file; its configuration lives in .tf files and its runtime inputs in variables.", "source": "terraform-docs"}
 {"text": "GitOps tools such as Argo CD can deploy Helm charts by rendering them and continuously syncing the output to a cluster.", "source": "gitops-notes"}
+{"text": "On this platform, Kubernetes Secrets are encrypted at rest using a KMS provider configured on the API server, rather than left as plain base64.", "source": "platform-notes"}
+{"text": "A values.yaml file is optional in a Helm chart; a chart whose templates define no required values can install without one.", "source": "helm-v3-notes"}
