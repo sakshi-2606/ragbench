@@ -7,9 +7,9 @@ gold answer. So each item result wraps the full QueryRecord plus the
 gold-answer-dependent flags that /query deliberately leaves out. The report
 then rolls those up into aggregate rates.
 
-Scoring mirrors run_benchmark.py exactly — no new metrics in this slice.
-Each item result now also carries its slice + difficulty tags, so per-slice /
-per-difficulty breakdowns can be computed later.
+The report is stamped with BOTH provenance keys — config_version (which
+settings) and dataset_version + dataset_hash (which frozen dataset) — so any
+result is fully reproducible.
 """
 
 from __future__ import annotations
@@ -66,6 +66,8 @@ class EvalAggregates(BaseModel):
 class EvalReport(BaseModel):
     eval_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     dataset: str                        # path to the eval dataset
+    dataset_version: Optional[str] = None   # frozen version label (e.g. "v1")
+    dataset_hash: Optional[str] = None      # content fingerprint of the set
     config_version: str
     timestamp: str = Field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat()

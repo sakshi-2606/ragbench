@@ -5,10 +5,10 @@ Lifts the scoring + aggregation loop out of run_benchmark.py into one reusable
 function that returns a structured EvalReport (and optionally writes result
 files for the dashboard to read later).
 
-For each dataset item it calls run_query() — so every eval item gets the same
-rich per-query record the /query endpoint returns — then layers on the
-gold-answer-dependent flags. Scoring is identical to run_benchmark.py. Each
-item's slice + difficulty tags are carried onto the result.
+Items are loaded via load_evalset(), which validates tags and verifies the
+dataset's content hash against its manifest — so every report is stamped with
+the exact frozen dataset (version + hash) it ran on. For each item it calls
+run_query(), then scores it exactly as run_benchmark.py does.
 """
 
 from __future__ import annotations
@@ -22,20 +22,12 @@ from typing import List, Optional
 from ragbench.bench.schema import BenchItem
 from ragbench.pipeline.run_query import run_query
 from ragbench.utils.config import RunConfig
+from ragbench.eval.dataset import load_evalset
 from ragbench.utils.eval_schema import (
     EvalItemResult,
     EvalAggregates,
     EvalReport,
 )
-
-
-def _load_jsonl(path: str):
-    """Yield parsed JSON objects, skipping blank lines (sample.jsonl has one)."""
-    with open(path) as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                yield json.loads(line)
 
 
 def _score_item(bi: BenchItem, record) -> EvalItemResult:
@@ -97,11 +89,9 @@ def _persist(report: EvalReport, persist_dir: str) -> None:
     os.makedirs(persist_dir, exist_ok=True)
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    # full report (everything the dashboard needs)
     with open(os.path.join(persist_dir, f"eval_{ts}.json"), "w") as f:
         f.write(report.model_dump_json(indent=2))
 
-    # flat summary of the aggregate rates
     agg = report.aggregates
     with open(os.path.join(persist_dir, f"eval_summary_{ts}.csv"), "w") as f:
         f.write("metric,value\n")
@@ -114,14 +104,17 @@ def run_eval(
     config: RunConfig,
     persist_dir: Optional[str] = None,
 ) -> EvalReport:
+    bench_items, meta = load_evalset(dataset_path)
+
     items: List[EvalItemResult] = []
-    for raw in _load_jsonl(dataset_path):
-        bi = BenchItem(**raw)
+    for bi in bench_items:
         record = run_query(bi.question, config)
         items.append(_score_item(bi, record))
 
     report = EvalReport(
         dataset=dataset_path,
+        dataset_version=meta.get("version"),
+        dataset_hash=meta.get("hash"),
         config_version=config.version,
         aggregates=_aggregate(items),
         items=items,
