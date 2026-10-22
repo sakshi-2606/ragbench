@@ -1,0 +1,21 @@
+{
+  "version": "v1",
+  "dataset": "benchmarks/evalset_v1.jsonl",
+  "created": "2026-10-22",
+  "n_items": 50,
+  "content_hash": "c3d2256a045c013c",
+  "n_answerable": 40,
+  "n_unanswerable": 10,
+  "by_slice": {
+    "single_hop": 13,
+    "multi_hop": 10,
+    "unanswerable": 10,
+    "conflicting_context": 8,
+    "adversarial": 9
+  },
+  "by_difficulty": {
+    "easy": 13,
+    "medium": 28,
+    "hard": 9
+  }
+}
