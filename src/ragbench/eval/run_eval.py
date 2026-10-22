@@ -2,8 +2,8 @@
 End-to-end eval orchestration.
 
 Loads a frozen, tagged eval set (validating tags + hash), runs run_query() on
-each item, scores it exactly as run_benchmark.py does, then rolls the results
-up into overall aggregates AND per-slice / per-difficulty breakdowns.
+each item, scores it, rolls up overall aggregates + per-slice / per-difficulty
+breakdowns, and attaches Wilson confidence intervals for every rate.
 """
 
 from __future__ import annotations
@@ -17,6 +17,7 @@ from ragbench.bench.schema import BenchItem
 from ragbench.pipeline.run_query import run_query
 from ragbench.utils.config import RunConfig
 from ragbench.eval.dataset import load_evalset
+from ragbench.eval.bootstrap import compute_confidence
 from ragbench.utils.eval_schema import (
     EvalItemResult,
     EvalAggregates,
@@ -56,20 +57,16 @@ def _score_item(bi: BenchItem, record) -> EvalItemResult:
 
 
 def _rate(flags) -> float:
-    """Mean over a subset; 0.0 when the subset is empty (matches run_benchmark)."""
     flags = list(flags)
     return float(mean(1 if f else 0 for f in flags)) if flags else 0.0
 
 
 def _opt_rate(flags) -> Optional[float]:
-    """Like _rate, but None when the subset is empty — so a metric that doesn't
-    apply to a group is omitted rather than shown as 0."""
     flags = list(flags)
     return _rate(flags) if flags else None
 
 
 def _group_metrics(items: List[EvalItemResult]) -> GroupMetrics:
-    """Metrics for an arbitrary group of results (a slice, or a difficulty)."""
     answerable = [it for it in items if it.is_answerable]
     unanswerable = [it for it in items if not it.is_answerable]
     return GroupMetrics(
@@ -106,9 +103,25 @@ def _aggregate(items: List[EvalItemResult]) -> EvalAggregates:
 
 
 def _breakdown(items: List[EvalItemResult], key) -> Dict[str, GroupMetrics]:
-    """Group items by a key function (slice or difficulty) and compute metrics."""
     names = sorted({key(it) for it in items if key(it) is not None})
     return {name: _group_metrics([it for it in items if key(it) == name]) for name in names}
+
+
+def _confidence(items: List[EvalItemResult]) -> dict:
+    item_dicts = [
+        {
+            "is_answerable": it.is_answerable,
+            "faithful": it.faithful,
+            "answer_success": it.answer_success,
+            "false_refusal": it.false_refusal,
+            "hallucination": it.hallucination,
+            "correct_refusal": it.correct_refusal,
+            "slice": it.slice,
+            "difficulty": it.difficulty,
+        }
+        for it in items
+    ]
+    return compute_confidence(item_dicts)
 
 
 def _persist(report: EvalReport, persist_dir: str) -> None:
@@ -145,6 +158,7 @@ def run_eval(
         aggregates=_aggregate(items),
         by_slice=_breakdown(items, lambda it: it.slice),
         by_difficulty=_breakdown(items, lambda it: it.difficulty),
+        confidence=_confidence(items),
         items=items,
     )
 

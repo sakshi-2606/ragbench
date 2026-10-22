@@ -2,17 +2,16 @@
 Structured result schema for a full eval run (the /eval counterpart to the
 per-query QueryRecord).
 
-The report carries the overall aggregates plus per-slice and per-difficulty
-breakdowns, so "faithfulness 1.0" can be split into "faithfulness on multi_hop
-vs conflicting_context", etc. It is stamped with both provenance keys —
-config_version and dataset_version + dataset_hash — so any result is reproducible.
+The report carries the overall aggregates, per-slice and per-difficulty
+breakdowns, and a `confidence` block (Wilson CIs for each rate). It is stamped
+with both provenance keys — config_version and dataset_version + dataset_hash.
 """
 
 from __future__ import annotations
 
 import uuid
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -23,14 +22,13 @@ class EvalItemResult(BaseModel):
     id: str
     question: str
     gold_answer: Optional[str] = None
-    is_answerable: bool                 # gold_answer is not None
+    is_answerable: bool
 
     slice: Optional[str] = None
     difficulty: Optional[str] = None
 
-    record: QueryRecord                 # the full per-query record
+    record: QueryRecord
 
-    # --- scoring flags (mirror run_benchmark.py) ---
     faithful: Optional[bool] = None
     refused: bool = False
     answer_success: Optional[bool] = None
@@ -40,18 +38,12 @@ class EvalItemResult(BaseModel):
 
 
 class GroupMetrics(BaseModel):
-    """Metrics for one group (a slice, or a difficulty level).
-
-    A rate is None when it doesn't apply to this group — i.e. the subset it
-    would be computed over is empty (e.g. hallucination_rate for an all-answerable
-    slice). This keeps per-group reporting free of meaningless blanks.
-    """
     n: int
-    faithfulness_rate: float                        # over all items in the group
-    answer_success_rate: Optional[float] = None     # over answerable in the group
-    false_refusal_rate: Optional[float] = None      # over answerable in the group
-    hallucination_rate: Optional[float] = None      # over unanswerable in the group
-    correct_refusal_rate: Optional[float] = None    # over unanswerable in the group
+    faithfulness_rate: float
+    answer_success_rate: Optional[float] = None
+    false_refusal_rate: Optional[float] = None
+    hallucination_rate: Optional[float] = None
+    correct_refusal_rate: Optional[float] = None
     avg_total_latency_ms: float
     total_cost_usd: float
 
@@ -83,4 +75,6 @@ class EvalReport(BaseModel):
     aggregates: EvalAggregates
     by_slice: Dict[str, GroupMetrics] = {}
     by_difficulty: Dict[str, GroupMetrics] = {}
+    # Wilson CIs for each rate (aggregate + per-slice + per-difficulty).
+    confidence: Dict[str, Any] = {}
     items: List[EvalItemResult] = []

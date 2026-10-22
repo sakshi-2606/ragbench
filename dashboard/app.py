@@ -2,8 +2,9 @@
 RAGBench eval dashboard (Streamlit).
 
 Read-only viewer: loads a saved results/eval_*.json (written by run_eval) and
-renders the scorecard, stage-latency chart, dataset split, per-slice and
-per-difficulty breakdowns, and the per-item table. It only reads files.
+renders the scorecard (with 95% CIs), stage-latency chart, dataset split,
+per-slice and per-difficulty breakdowns (slice chart has CI whiskers), and the
+per-item table. It only reads files.
 
 Run from the repo root:
     streamlit run dashboard/app.py
@@ -38,6 +39,15 @@ with open(choice) as f:
 
 agg = report["aggregates"]
 items = report["items"]
+conf = report.get("confidence", {})
+agg_ci = conf.get("aggregate", {})
+slice_ci = conf.get("by_slice", {})
+
+
+def ci_caption(metric):
+    c = agg_ci.get(metric)
+    return f"95% CI {c['low'] * 100:.0f}–{c['high'] * 100:.0f}%" if c else ""
+
 
 # ---- run metadata ----
 m = st.columns(4)
@@ -48,17 +58,20 @@ m[3].markdown(f"**Items**  \n`{agg['n_items']}`")
 
 st.divider()
 
-# ---- scorecard ----
+# ---- scorecard (with CIs under each rate) ----
 st.subheader("Scorecard")
+if conf:
+    st.caption("Intervals are 95% Wilson confidence intervals.")
+
 r1 = st.columns(4)
-r1[0].metric("Faithfulness", f"{agg['faithfulness_rate'] * 100:.1f}%")
-r1[1].metric("Answer success", f"{agg['answer_success_rate'] * 100:.1f}%")
-r1[2].metric("Correct refusal", f"{agg['correct_refusal_rate'] * 100:.1f}%")
-r1[3].metric("False refusal", f"{agg['false_refusal_rate'] * 100:.1f}%")
+r1[0].metric("Faithfulness", f"{agg['faithfulness_rate'] * 100:.1f}%"); r1[0].caption(ci_caption("faithfulness_rate"))
+r1[1].metric("Answer success", f"{agg['answer_success_rate'] * 100:.1f}%"); r1[1].caption(ci_caption("answer_success_rate"))
+r1[2].metric("Correct refusal", f"{agg['correct_refusal_rate'] * 100:.1f}%"); r1[2].caption(ci_caption("correct_refusal_rate"))
+r1[3].metric("False refusal", f"{agg['false_refusal_rate'] * 100:.1f}%"); r1[3].caption(ci_caption("false_refusal_rate"))
 
 r2 = st.columns(4)
 avg_cost = agg["total_cost_usd"] / agg["n_items"] if agg["n_items"] else 0
-r2[0].metric("Hallucination", f"{agg['hallucination_rate'] * 100:.1f}%")
+r2[0].metric("Hallucination", f"{agg['hallucination_rate'] * 100:.1f}%"); r2[0].caption(ci_caption("hallucination_rate"))
 r2[1].metric("Avg latency", f"{agg['avg_total_latency_ms']:.0f} ms")
 r2[2].metric("Total cost", f"${agg['total_cost_usd']:.5f}")
 r2[3].metric("Avg cost / query", f"${avg_cost:.6f}")
@@ -73,10 +86,8 @@ with left:
     labels = ["embed", "retrieve", "rerank", "answer", "judge"]
     n = len(items) or 1
     stage_df = pd.DataFrame(
-        {
-            "stage": labels,
-            "avg_ms": [sum(it["record"]["metrics"]["latency"].get(k, 0) for it in items) / n for k in stage_keys],
-        }
+        {"stage": labels,
+         "avg_ms": [sum(it["record"]["metrics"]["latency"].get(k, 0) for it in items) / n for k in stage_keys]}
     )
     chart = (
         alt.Chart(stage_df).mark_bar()
@@ -91,22 +102,17 @@ with right:
 
 st.divider()
 
+
 # ---- per-slice / per-difficulty breakdowns ----
 def breakdown_df(groups: dict) -> pd.DataFrame:
     rows = []
     for name, mx in groups.items():
-        rows.append(
-            {
-                "group": name,
-                "n": mx["n"],
-                "faithfulness": mx["faithfulness_rate"],
-                "answer_success": mx.get("answer_success_rate"),
-                "false_refusal": mx.get("false_refusal_rate"),
-                "hallucination": mx.get("hallucination_rate"),
-                "correct_refusal": mx.get("correct_refusal_rate"),
-                "avg_latency_ms": round(mx["avg_total_latency_ms"]),
-            }
-        )
+        rows.append({
+            "group": name, "n": mx["n"], "faithfulness": mx["faithfulness_rate"],
+            "answer_success": mx.get("answer_success_rate"), "false_refusal": mx.get("false_refusal_rate"),
+            "hallucination": mx.get("hallucination_rate"), "correct_refusal": mx.get("correct_refusal_rate"),
+            "avg_latency_ms": round(mx["avg_total_latency_ms"]),
+        })
     return pd.DataFrame(rows)
 
 
@@ -119,23 +125,31 @@ by_difficulty = report.get("by_difficulty", {})
 if not by_slice:
     st.info("This run predates per-slice breakdowns — re-run the eval to populate them.")
 else:
-    st.subheader("Breakdown by slice")
+    st.subheader("Answer success by slice")
     slice_df = breakdown_df(by_slice)
+    ans = slice_df.dropna(subset=["answer_success"]).sort_values("answer_success", ascending=False).copy()
 
-    # answer-success by slice (only slices where it applies) — surfaces weak slices
-    ans = slice_df.dropna(subset=["answer_success"])
     if not ans.empty:
-        bar = (
-            alt.Chart(ans).mark_bar()
-            .encode(
-                x=alt.X("group", sort="-y", title=None),
-                y=alt.Y("answer_success", title="answer success", scale=alt.Scale(domain=[0, 1])),
-                tooltip=["group", "answer_success", "n"],
-            )
-            .properties(height=260)
+        # attach CIs from the confidence block
+        ans["ci_low"] = ans["group"].map(lambda g: (slice_ci.get(g, {}).get("answer_success_rate") or {}).get("low"))
+        ans["ci_high"] = ans["group"].map(lambda g: (slice_ci.get(g, {}).get("answer_success_rate") or {}).get("high"))
+        order = list(ans["group"])
+        x = alt.X("group", sort=order, title=None)
+        base = alt.Chart(ans)
+        bars = base.mark_bar(opacity=0.85).encode(
+            x=x, y=alt.Y("answer_success:Q", title="answer success", scale=alt.Scale(domain=[0, 1])),
+            tooltip=["group", "answer_success", "n", "ci_low", "ci_high"],
         )
-        st.altair_chart(bar, use_container_width=True)
+        layers = [bars]
+        if ans["ci_low"].notna().any():
+            whisk = base.mark_rule(strokeWidth=2, color="#8a93a3").encode(x=x, y="ci_low:Q", y2="ci_high:Q")
+            cap = base.mark_tick(thickness=2, size=12, color="#8a93a3")
+            layers += [whisk, cap.encode(x=x, y="ci_low:Q"), cap.encode(x=x, y="ci_high:Q")]
+        st.altair_chart(alt.layer(*layers).properties(height=280), use_container_width=True)
+        if ans["ci_low"].notna().any():
+            st.caption("Whiskers are 95% Wilson CIs — note how wide the small-n slices are.")
 
+    st.subheader("Breakdown by slice")
     st.dataframe(slice_df, use_container_width=True, hide_index=True, column_config=rate_fmt)
 
     st.subheader("Breakdown by difficulty")
@@ -161,14 +175,9 @@ def outcome(it):
 
 rows = [
     {
-        "id": it["id"],
-        "slice": it.get("slice"),
-        "difficulty": it.get("difficulty"),
-        "question": it["question"],
-        "faithful": it["faithful"],
-        "refused": it["refused"],
-        "outcome": outcome(it),
-        "latency_ms": it["record"]["metrics"]["latency"]["total_ms"],
+        "id": it["id"], "slice": it.get("slice"), "difficulty": it.get("difficulty"),
+        "question": it["question"], "faithful": it["faithful"], "refused": it["refused"],
+        "outcome": outcome(it), "latency_ms": it["record"]["metrics"]["latency"]["total_ms"],
         "cost_usd": round(it["record"]["metrics"]["total_cost_usd"], 6),
     }
     for it in items
