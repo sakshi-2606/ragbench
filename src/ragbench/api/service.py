@@ -29,7 +29,7 @@ from ragbench.eval.run_eval import run_eval
 
 CONFIG_PATH = os.getenv("RAGBENCH_CONFIG", "configs/query.yaml")
 
-app = FastAPI(title="RAGBench Query Service", version="0.2.0")
+app = FastAPI(title="RAGBench Query Service", version="0.3.0")
 config = RunConfig.from_yaml(CONFIG_PATH)
 
 
@@ -38,7 +38,7 @@ class QueryRequest(BaseModel):
 
 
 class EvalRequest(BaseModel):
-    dataset_path: str = "benchmarks/sample.jsonl"
+    dataset_path: str = "benchmarks/evalset_v1.jsonl"   # frozen, tagged eval set
     persist: bool = True            # write result files to results/
 
 
@@ -59,7 +59,7 @@ def eval_dataset(req: EvalRequest) -> EvalReport:
     """Run the whole dataset and return the full eval report.
 
     NOTE: synchronous — the request stays open until the run finishes
-    (~1-2 min for the sample set). A background-job design is a later slice.
+    (~2-3 min for the 50-item set). A background-job design is a later slice.
     """
     persist_dir = "results" if req.persist else None
     return run_eval(req.dataset_path, config, persist_dir=persist_dir)

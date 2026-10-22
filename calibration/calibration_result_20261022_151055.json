@@ -1,0 +1,25 @@
+{
+  "csv": "calibration/blind_labels_20261022_151055.csv",
+  "n": 30,
+  "raw_agreement": 0.8333333333333334,
+  "chance_agreement": 0.5044444444444445,
+  "cohen_kappa": 0.6636771300448431,
+  "kappa_interpretation": "substantial",
+  "confusion": {
+    "tn": 14,
+    "fp": 2,
+    "fn": 3,
+    "tp": 11
+  },
+  "sensitivity": 0.7857142857142857,
+  "specificity": 0.875,
+  "precision": 0.8461538461538461,
+  "corrupted_caught": "13/15",
+  "disagreements": [
+    "c02",
+    "c08",
+    "c14",
+    "c24",
+    "c25"
+  ]
+}

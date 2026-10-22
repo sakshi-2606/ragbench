@@ -1,9 +1,9 @@
 """
 RAGBench eval dashboard (Streamlit).
 
-Read-only viewer: it loads a saved results/eval_*.json (written by run_eval) and
-renders the scorecard, stage-latency chart, dataset split, and per-item table.
-It never calls the pipeline or the API — it only reads files.
+Read-only viewer: loads a saved results/eval_*.json (written by run_eval) and
+renders the scorecard, stage-latency chart, dataset split, per-slice and
+per-difficulty breakdowns, and the per-item table. It only reads files.
 
 Run from the repo root:
     streamlit run dashboard/app.py
@@ -13,6 +13,7 @@ import glob
 import json
 import os
 
+import altair as alt
 import pandas as pd
 import streamlit as st
 
@@ -41,8 +42,8 @@ items = report["items"]
 # ---- run metadata ----
 m = st.columns(4)
 m[0].markdown(f"**Dataset**  \n`{report['dataset']}`")
-m[1].markdown(f"**Config version**  \n`{report['config_version']}`")
-m[2].markdown(f"**Timestamp**  \n`{report['timestamp'][:19]}`")
+m[1].markdown(f"**Dataset version**  \n`{report.get('dataset_version') or '—'}`  ·  `{(report.get('dataset_hash') or '')[:12]}`")
+m[2].markdown(f"**Config version**  \n`{report['config_version']}`")
 m[3].markdown(f"**Items**  \n`{agg['n_items']}`")
 
 st.divider()
@@ -66,22 +67,81 @@ st.divider()
 
 # ---- stage latency + dataset split ----
 left, right = st.columns([1.5, 1])
-
 with left:
     st.subheader("Avg latency by stage (ms)")
     stage_keys = ["embed_query_ms", "retrieve_ms", "rerank_ms", "answer_ms", "judge_ms"]
     labels = ["embed", "retrieve", "rerank", "answer", "judge"]
     n = len(items) or 1
-    avg_stage = {
-        lbl: sum(it["record"]["metrics"]["latency"].get(k, 0) for it in items) / n
-        for lbl, k in zip(labels, stage_keys)
-    }
-    st.bar_chart(pd.DataFrame({"avg_ms": avg_stage}))
-
+    stage_df = pd.DataFrame(
+        {
+            "stage": labels,
+            "avg_ms": [sum(it["record"]["metrics"]["latency"].get(k, 0) for it in items) / n for k in stage_keys],
+        }
+    )
+    chart = (
+        alt.Chart(stage_df).mark_bar()
+        .encode(x=alt.X("stage", sort=labels, title=None), y=alt.Y("avg_ms", title="avg ms"), tooltip=["stage", "avg_ms"])
+        .properties(height=300)
+    )
+    st.altair_chart(chart, use_container_width=True)
 with right:
     st.subheader("Dataset split")
     st.metric("Answerable", agg["n_answerable"])
     st.metric("Unanswerable", agg["n_unanswerable"])
+
+st.divider()
+
+# ---- per-slice / per-difficulty breakdowns ----
+def breakdown_df(groups: dict) -> pd.DataFrame:
+    rows = []
+    for name, mx in groups.items():
+        rows.append(
+            {
+                "group": name,
+                "n": mx["n"],
+                "faithfulness": mx["faithfulness_rate"],
+                "answer_success": mx.get("answer_success_rate"),
+                "false_refusal": mx.get("false_refusal_rate"),
+                "hallucination": mx.get("hallucination_rate"),
+                "correct_refusal": mx.get("correct_refusal_rate"),
+                "avg_latency_ms": round(mx["avg_total_latency_ms"]),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+RATE_COLS = ["faithfulness", "answer_success", "false_refusal", "hallucination", "correct_refusal"]
+rate_fmt = {c: st.column_config.NumberColumn(format="%.2f") for c in RATE_COLS}
+
+by_slice = report.get("by_slice", {})
+by_difficulty = report.get("by_difficulty", {})
+
+if not by_slice:
+    st.info("This run predates per-slice breakdowns — re-run the eval to populate them.")
+else:
+    st.subheader("Breakdown by slice")
+    slice_df = breakdown_df(by_slice)
+
+    # answer-success by slice (only slices where it applies) — surfaces weak slices
+    ans = slice_df.dropna(subset=["answer_success"])
+    if not ans.empty:
+        bar = (
+            alt.Chart(ans).mark_bar()
+            .encode(
+                x=alt.X("group", sort="-y", title=None),
+                y=alt.Y("answer_success", title="answer success", scale=alt.Scale(domain=[0, 1])),
+                tooltip=["group", "answer_success", "n"],
+            )
+            .properties(height=260)
+        )
+        st.altair_chart(bar, use_container_width=True)
+
+    st.dataframe(slice_df, use_container_width=True, hide_index=True, column_config=rate_fmt)
+
+    st.subheader("Breakdown by difficulty")
+    diff_order = {"easy": 0, "medium": 1, "hard": 2}
+    diff_df = breakdown_df(by_difficulty).sort_values("group", key=lambda s: s.map(diff_order))
+    st.dataframe(diff_df, use_container_width=True, hide_index=True, column_config=rate_fmt)
 
 st.divider()
 
@@ -102,8 +162,9 @@ def outcome(it):
 rows = [
     {
         "id": it["id"],
+        "slice": it.get("slice"),
+        "difficulty": it.get("difficulty"),
         "question": it["question"],
-        "type": "answerable" if it["is_answerable"] else "unanswerable",
         "faithful": it["faithful"],
         "refused": it["refused"],
         "outcome": outcome(it),

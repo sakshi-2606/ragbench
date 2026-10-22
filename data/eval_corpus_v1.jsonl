@@ -1,0 +1,29 @@
+{"text": "A Helm chart is a package of pre-configured Kubernetes resource templates, bundled with a default values file and metadata declared in Chart.yaml.", "source": "helm-docs"}
+{"text": "Helm templates are written in the Go template language and are rendered into concrete Kubernetes manifests at install time.", "source": "helm-docs"}
+{"text": "Helm injects configuration into templates through the .Values object, whose contents come from values.yaml.", "source": "helm-docs"}
+{"text": "Values in a Helm chart can be overridden at install time with --set flags or by passing additional files with -f/--values.", "source": "helm-docs"}
+{"text": "Running 'helm install' renders a chart's templates with the merged values and applies the resulting manifests to the Kubernetes cluster.", "source": "helm-docs"}
+{"text": "A Helm release is a specific instance of a chart deployed to a cluster, tracked by a unique release name.", "source": "helm-docs"}
+{"text": "Helm chart dependencies are declared in Chart.yaml and fetched into the charts/ subdirectory before rendering.", "source": "helm-docs"}
+{"text": "In Helm 2, releases were managed by a cluster-side server component called Tiller, which held broad permissions.", "source": "helm-v2-notes"}
+{"text": "Helm 3 removed Tiller entirely; it runs fully client-side and stores release state as Secrets in the target namespace.", "source": "helm-v3-notes"}
+{"text": "A Kubernetes Deployment manages a ReplicaSet, which in turn keeps a desired number of identical Pods running.", "source": "k8s-docs"}
+{"text": "A Deployment enables declarative rollouts and rollbacks by creating and updating the ReplicaSet it owns.", "source": "k8s-docs"}
+{"text": "If the replicas field is not set, a Kubernetes Deployment defaults to a single replica.", "source": "k8s-docs"}
+{"text": "The platform base chart overrides the Kubernetes default and sets replicas to 3 for every service unless a team opts out.", "source": "platform-notes"}
+{"text": "A Kubernetes Service provides a stable network endpoint and load-balances traffic across the Pods selected by its label selector.", "source": "k8s-docs"}
+{"text": "A ConfigMap stores non-sensitive configuration as key-value pairs that Pods can consume as environment variables or mounted files.", "source": "k8s-docs"}
+{"text": "A Secret holds sensitive data such as passwords or tokens; by default it is only base64-encoded, not encrypted, at rest.", "source": "k8s-docs"}
+{"text": "A namespace partitions cluster resources, scoping names and providing a boundary for quotas and access control.", "source": "k8s-docs"}
+{"text": "A Pod is the smallest deployable unit in Kubernetes and can hold one or more tightly coupled containers sharing a network namespace.", "source": "k8s-docs"}
+{"text": "Kustomize is an alternative to Helm that patches raw Kubernetes manifests with overlays instead of using a templating language.", "source": "k8s-docs"}
+{"text": "Terraform state maps real-world infrastructure to the resources declared in configuration and stores metadata Terraform uses to plan changes.", "source": "terraform-docs"}
+{"text": "Terraform state can be stored locally in a terraform.tfstate file or in a remote backend such as an S3 bucket.", "source": "terraform-docs"}
+{"text": "A remote Terraform backend enables state locking so that concurrent runs do not corrupt shared state.", "source": "terraform-docs"}
+{"text": "Terraform configuration is written in HCL across .tf files that declare providers, resources, and variables.", "source": "terraform-docs"}
+{"text": "terraform plan previews the changes Terraform will make, while terraform apply executes them and updates the state.", "source": "terraform-docs"}
+{"text": "Terraform input variables are declared with variable blocks and can be set via tfvars files, -var flags, or environment variables.", "source": "terraform-docs"}
+{"text": "Unlike Helm, Terraform does not use a values.yaml file; its configuration lives in .tf files and its runtime inputs in variables.", "source": "terraform-docs"}
+{"text": "GitOps tools such as Argo CD can deploy Helm charts by rendering them and continuously syncing the output to a cluster.", "source": "gitops-notes"}
+{"text": "On this platform, Kubernetes Secrets are encrypted at rest using a KMS provider configured on the API server, rather than left as plain base64.", "source": "platform-notes"}
+{"text": "A values.yaml file is optional in a Helm chart; a chart whose templates define no required values can install without one.", "source": "helm-v3-notes"}

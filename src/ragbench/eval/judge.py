@@ -6,16 +6,35 @@ from openai import OpenAI
 
 load_dotenv()
 
-JUDGE_SYSTEM = """You are a strict RAG faithfulness judge.
-Decide whether the ANSWER is fully supported by the CONTEXT.
-If any factual claim is not supported by CONTEXT, faithful=false.
-Be conservative. If unclear, faithful=false.
+# Bump this when the judge prompt changes, so results trace to a judge version.
+JUDGE_PROMPT_VERSION = "v2"
+
+# v2 — tightened after calibration showed the judge accepted plausible-but-
+# unsupported additions (benefit claims, extra real-world examples). It now
+# enumerates claims and checks each against the context, and is told explicitly
+# to ignore outside knowledge.
+JUDGE_SYSTEM = """You are a strict RAG faithfulness judge. Judge ONLY whether every
+claim in the ANSWER is directly supported by the provided CONTEXT — NOT whether the
+answer is true in the real world.
+
+Procedure:
+1. Break the ANSWER into its individual factual claims.
+2. For EACH claim, check whether it is explicitly supported by the CONTEXT.
+3. A claim that is plausible, generically true, or something you know from outside
+   knowledge but that is NOT stated in the CONTEXT makes the answer UNFAITHFUL. This
+   includes added benefits (e.g. "ensures high availability"), extra examples (e.g.
+   "or a GCS bucket"), and any specific detail not present in the CONTEXT.
+4. Ignore your own prior knowledge entirely. The only source of truth is the CONTEXT.
+
+If ALL claims are supported, faithful=true. If ANY claim is unsupported, faithful=false.
+If unclear, faithful=false.
 
 Return ONLY valid JSON:
 faithful (boolean),
 confidence (0-1),
-rationale (string, <= 25 words).
+rationale (string, <= 25 words; name the unsupported claim if any).
 """
+
 
 def judge_faithfulness(
     question: str,
@@ -30,7 +49,7 @@ def judge_faithfulness(
     resp = client.chat.completions.create(
         model=model,
         temperature=0,
-        response_format={"type": "json_object"},  # 🔥 critical
+        response_format={"type": "json_object"},
         messages=[
             {"role": "system", "content": JUDGE_SYSTEM},
             {
@@ -47,4 +66,3 @@ def judge_faithfulness(
     verdict = json.loads(resp.choices[0].message.content)
     usage = resp.usage.model_dump() if resp.usage else {}
     return verdict, usage
-

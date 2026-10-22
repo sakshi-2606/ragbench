@@ -1,0 +1,151 @@
+row_id,question,context,answer,human_label
+c00,What is Kustomize?,"Kustomize is an alternative to Helm that patches raw Kubernetes manifests with overlays instead of using a templating language.
+
+A Pod is the smallest deployable unit in Kubernetes and can hold one or more tightly coupled containers sharing a network namespace.
+
+A Kubernetes Service provides a stable network endpoint and load-balances traffic across the Pods selected by its label selector.",Kustomize is an alternative to Helm that patches raw Kubernetes manifests with overlays instead of using a templating language [chunk_0].,faithful
+c01,What is the default port of the Kubernetes API server?,"The platform base chart overrides the Kubernetes default and sets replicas to 3 for every service unless a team opts out.
+
+A Pod is the smallest deployable unit in Kubernetes and can hold one or more tightly coupled containers sharing a network namespace.
+
+A Kubernetes Service provides a stable network endpoint and load-balances traffic across the Pods selected by its label selector.",The default port of the Kubernetes API server is 6443.,unfaithful
+c02,"By default, how many replicas does a service run on this platform?","The platform base chart overrides the Kubernetes default and sets replicas to 3 for every service unless a team opts out.
+
+If the replicas field is not set, a Kubernetes Deployment defaults to a single replica.
+
+A Kubernetes Deployment manages a ReplicaSet, which in turn keeps a desired number of identical Pods running.","By default, the platform runs 3 replicas for every service unless a team opts out [chunk_0]. This ensures high availability and load balancing across the cluster.",unfaithful
+c03,Does a Helm chart require a values.yaml file?,"A values.yaml file is optional in a Helm chart; a chart whose templates define no required values can install without one.
+
+A Helm chart is a package of pre-configured Kubernetes resource templates, bundled with a default values file and metadata declared in Chart.yaml.
+
+Helm chart dependencies are declared in Chart.yaml and fetched into the charts/ subdirectory before rendering.",A Helm chart does not require a values.yaml file; it is optional and a chart can install without one if its templates define no required values [chunk_0].,faithful
+c04,How does Helm manage release state?,"A Helm release is a specific instance of a chart deployed to a cluster, tracked by a unique release name.
+
+Helm 3 removed Tiller entirely; it runs fully client-side and stores release state as Secrets in the target namespace.
+
+In Helm 2, releases were managed by a cluster-side server component called Tiller, which held broad permissions.","Helm manages release state by storing it as Secrets in the target namespace, running fully client-side without Tiller in Helm 3 [chunk_1].",faithful
+c05,"A Kubernetes Service load-balances across every Pod in the cluster, right?","A Kubernetes Service provides a stable network endpoint and load-balances traffic across the Pods selected by its label selector.
+
+A Kubernetes Deployment manages a ReplicaSet, which in turn keeps a desired number of identical Pods running.
+
+The platform base chart overrides the Kubernetes default and sets replicas to 3 for every service unless a team opts out.","No, a Kubernetes Service load-balances traffic only across the Pods selected by its label selector, not across every Pod in the cluster [chunk_0]. It also automatically distributes traffic evenly across all namespaces in the cluster.",unfaithful
+c06,Are Kubernetes Secrets encrypted at rest?,"On this platform, Kubernetes Secrets are encrypted at rest using a KMS provider configured on the API server, rather than left as plain base64.
+
+A Secret holds sensitive data such as passwords or tokens; by default it is only base64-encoded, not encrypted, at rest.
+
+A Kubernetes Service provides a stable network endpoint and load-balances traffic across the Pods selected by its label selector.","Yes, Kubernetes Secrets are encrypted at rest using a KMS provider configured on the API server on this platform, rather than being left as plain base64 [chunk_0]. This encryption uses AES-256-GCM by default.",unfaithful
+c07,"If I don't configure replicas, how many will my service get?","The platform base chart overrides the Kubernetes default and sets replicas to 3 for every service unless a team opts out.
+
+If the replicas field is not set, a Kubernetes Deployment defaults to a single replica.
+
+A Deployment enables declarative rollouts and rollbacks by creating and updating the ReplicaSet it owns.","If you don't configure replicas, your service will get 3 replicas because the platform base chart overrides the Kubernetes default and sets replicas to 3 for every service unless a team opts out [chunk_0].",faithful
+c08,Why does editing values.yaml change what actually runs in the cluster?,"Unlike Helm, Terraform does not use a values.yaml file; its configuration lives in .tf files and its runtime inputs in variables.
+
+Helm injects configuration into templates through the .Values object, whose contents come from values.yaml.
+
+A values.yaml file is optional in a Helm chart; a chart whose templates define no required values can install without one.","Editing values.yaml changes what actually runs in the cluster because Helm injects configuration into templates through the .Values object, whose contents come from values.yaml. This means the values.yaml file provides the input values that Helm uses to render the templates, affecting the deployed resources. Additionally, values.yaml files are automatically synced with the cluster every hour to ensure consistency [chunk_1].",faithful
+c09,"terraform apply just shows me the changes without making them, correct?","terraform plan previews the changes Terraform will make, while terraform apply executes them and updates the state.
+
+Terraform state maps real-world infrastructure to the resources declared in configuration and stores metadata Terraform uses to plan changes.
+
+Terraform input variables are declared with variable blocks and can be set via tfvars files, -var flags, or environment variables.","No, terraform apply executes the changes and updates the state; it does not just show the changes. Terraform plan previews the changes without making them [chunk_0].",faithful
+c10,What does a Kubernetes Deployment manage?,"A Kubernetes Service provides a stable network endpoint and load-balances traffic across the Pods selected by its label selector.
+
+A Deployment enables declarative rollouts and rollbacks by creating and updating the ReplicaSet it owns.
+
+A Kubernetes Deployment manages a ReplicaSet, which in turn keeps a desired number of identical Pods running.","A Kubernetes Deployment manages a ReplicaSet, which in turn keeps a desired number of identical Pods running and automatically scales them based on CPU usage [chunk_2].",unfaithful
+c11,What is a Kubernetes ConfigMap for?,"A Kubernetes Service provides a stable network endpoint and load-balances traffic across the Pods selected by its label selector.
+
+A ConfigMap stores non-sensitive configuration as key-value pairs that Pods can consume as environment variables or mounted files.
+
+A Pod is the smallest deployable unit in Kubernetes and can hold one or more tightly coupled containers sharing a network namespace.",A Kubernetes ConfigMap stores non-sensitive configuration as key-value pairs that Pods can consume as environment variables or mounted files [chunk_1].,faithful
+c12,Who is the original author of the Kustomize project?,"Kustomize is an alternative to Helm that patches raw Kubernetes manifests with overlays instead of using a templating language.
+
+A Helm chart is a package of pre-configured Kubernetes resource templates, bundled with a default values file and metadata declared in Chart.yaml.
+
+Helm chart dependencies are declared in Chart.yaml and fetched into the charts/ subdirectory before rendering.",The original author of the Kustomize project is Nathan McCauley.,unfaithful
+c13,"If a Helm chart ships without a values.yaml, how can it still be configured at install?","A values.yaml file is optional in a Helm chart; a chart whose templates define no required values can install without one.
+
+Unlike Helm, Terraform does not use a values.yaml file; its configuration lives in .tf files and its runtime inputs in variables.
+
+A Helm chart is a package of pre-configured Kubernetes resource templates, bundled with a default values file and metadata declared in Chart.yaml.","If a Helm chart ships without a values.yaml, it can still be configured at install because the values.yaml file is optional; a chart whose templates define no required values can install without one [chunk_0].",faithful
+c14,"When Terraform state is stored remotely, where does it live and what protects concurrent runs?","A remote Terraform backend enables state locking so that concurrent runs do not corrupt shared state.
+
+Terraform state can be stored locally in a terraform.tfstate file or in a remote backend such as an S3 bucket.
+
+Terraform state maps real-world infrastructure to the resources declared in configuration and stores metadata Terraform uses to plan changes.","When Terraform state is stored remotely, it lives in a remote backend such as an S3 bucket or a Google Cloud Storage bucket. Remote Terraform backends enable state locking to protect against concurrent runs corrupting the shared state [chunk_0][chunk_1].",unfaithful
+c15,How does a Helm chart end up as running resources in a Kubernetes cluster?,"A Helm chart is a package of pre-configured Kubernetes resource templates, bundled with a default values file and metadata declared in Chart.yaml.
+
+Running 'helm install' renders a chart's templates with the merged values and applies the resulting manifests to the Kubernetes cluster.
+
+GitOps tools such as Argo CD can deploy Helm charts by rendering them and continuously syncing the output to a cluster.","A Helm chart becomes running resources in a Kubernetes cluster by running 'helm install', which renders the chart's templates with merged values and applies the resulting manifests to the cluster [chunk_1]. Additionally, GitOps tools like Argo CD can deploy Helm charts by rendering them and continuously syncing the output to the cluster [chunk_2]. Helm charts are always stored in a centralized repository before installation.",unfaithful
+c16,What is the smallest deployable unit in Kubernetes?,"A Pod is the smallest deployable unit in Kubernetes and can hold one or more tightly coupled containers sharing a network namespace.
+
+A Kubernetes Deployment manages a ReplicaSet, which in turn keeps a desired number of identical Pods running.
+
+If the replicas field is not set, a Kubernetes Deployment defaults to a single replica.",The smallest deployable unit in Kubernetes is a Pod [chunk_0].,faithful
+c17,"A Deployment runs Pods directly without a ReplicaSet, doesn't it?","If the replicas field is not set, a Kubernetes Deployment defaults to a single replica.
+
+A Kubernetes Deployment manages a ReplicaSet, which in turn keeps a desired number of identical Pods running.
+
+A Kubernetes Service provides a stable network endpoint and load-balances traffic across the Pods selected by its label selector.","No, a Deployment manages a ReplicaSet, which in turn runs the Pods. It does not run Pods directly [chunk_1].",faithful
+c18,How can Terraform input variables be set?,"Terraform input variables are declared with variable blocks and can be set via tfvars files, -var flags, or environment variables.
+
+Terraform configuration is written in HCL across .tf files that declare providers, resources, and variables.
+
+Unlike Helm, Terraform does not use a values.yaml file; its configuration lives in .tf files and its runtime inputs in variables.","Terraform input variables can be set via tfvars files, -var flags, environment variables, or directly within the Terraform state file [chunk_0].",unfaithful
+c19,How can Helm chart values be overridden at install time?,"Values in a Helm chart can be overridden at install time with --set flags or by passing additional files with -f/--values.
+
+Helm chart dependencies are declared in Chart.yaml and fetched into the charts/ subdirectory before rendering.
+
+A Helm chart is a package of pre-configured Kubernetes resource templates, bundled with a default values file and metadata declared in Chart.yaml.",Helm chart values can be overridden at install time using --set flags or by passing additional files with -f/--values [chunk_0].,faithful
+c20,What must happen to a chart's templates before Kubernetes can run them?,"Running 'helm install' renders a chart's templates with the merged values and applies the resulting manifests to the Kubernetes cluster.
+
+A Helm chart is a package of pre-configured Kubernetes resource templates, bundled with a default values file and metadata declared in Chart.yaml.
+
+The platform base chart overrides the Kubernetes default and sets replicas to 3 for every service unless a team opts out.","A chart's templates must be rendered with the merged values before Kubernetes can run them, and they must be digitally signed for security purposes.",unfaithful
+c21,What does a Kubernetes namespace provide?,"A namespace partitions cluster resources, scoping names and providing a boundary for quotas and access control.
+
+A Kubernetes Deployment manages a ReplicaSet, which in turn keeps a desired number of identical Pods running.
+
+A Kubernetes Service provides a stable network endpoint and load-balances traffic across the Pods selected by its label selector.","A Kubernetes namespace provides partitioning of cluster resources, scoping names, and a boundary for quotas and access control [chunk_0].",faithful
+c22,"Base64-encoding a Secret means it's encrypted, so it's secure, correct?","A Secret holds sensitive data such as passwords or tokens; by default it is only base64-encoded, not encrypted, at rest.
+
+On this platform, Kubernetes Secrets are encrypted at rest using a KMS provider configured on the API server, rather than left as plain base64.
+
+Helm 3 removed Tiller entirely; it runs fully client-side and stores release state as Secrets in the target namespace.","No, base64-encoding a Secret means it is only encoded, not encrypted, so it is not secure by itself. Base64 encoding is not encryption. However, on this platform, Kubernetes Secrets can be encrypted at rest using a KMS provider configured on the API server, rather than just base64-encoded [chunk_0][chunk_1]. Additionally, base64 encoding compresses the data, which adds a layer of security.",unfaithful
+c23,"Since Helm uses values.yaml, Terraform must use values.yaml too, right?","Unlike Helm, Terraform does not use a values.yaml file; its configuration lives in .tf files and its runtime inputs in variables.
+
+A values.yaml file is optional in a Helm chart; a chart whose templates define no required values can install without one.
+
+Helm injects configuration into templates through the .Values object, whose contents come from values.yaml.","No, Terraform does use a values.yaml file similar to Helm; however, its configuration is primarily in .tf files and runtime inputs are handled through variables [chunk_0].",unfaithful
+c24,Is it safe to store sensitive data in a Kubernetes Secret as-is?,"A Secret holds sensitive data such as passwords or tokens; by default it is only base64-encoded, not encrypted, at rest.
+
+On this platform, Kubernetes Secrets are encrypted at rest using a KMS provider configured on the API server, rather than left as plain base64.
+
+A Pod is the smallest deployable unit in Kubernetes and can hold one or more tightly coupled containers sharing a network namespace.","It is not safe to store sensitive data in a Kubernetes Secret as-is because by default it is only base64-encoded, not encrypted, at rest [chunk_0]. However, on this platform, Kubernetes Secrets are encrypted at rest using a KMS provider configured on the API server [chunk_1].",unfaithful
+c25,What programming language is Helm written in?,"Helm templates are written in the Go template language and are rendered into concrete Kubernetes manifests at install time.
+
+Kustomize is an alternative to Helm that patches raw Kubernetes manifests with overlays instead of using a templating language.
+
+GitOps tools such as Argo CD can deploy Helm charts by rendering them and continuously syncing the output to a cluster.",Helm is written in the Go programming language.,faithful
+c26,What language is Terraform configuration written in?,"Terraform configuration is written in HCL across .tf files that declare providers, resources, and variables.
+
+Terraform input variables are declared with variable blocks and can be set via tfvars files, -var flags, or environment variables.
+
+Unlike Helm, Terraform does not use a values.yaml file; its configuration lives in .tf files and its runtime inputs in variables.",Terraform configuration is written in HCL across .tf files [chunk_0].,faithful
+c27,Where are a Helm chart's dependencies declared?,"Helm chart dependencies are declared in Chart.yaml and fetched into the charts/ subdirectory before rendering.
+
+A Helm chart is a package of pre-configured Kubernetes resource templates, bundled with a default values file and metadata declared in Chart.yaml.
+
+Values in a Helm chart can be overridden at install time with --set flags or by passing additional files with -f/--values.",A Helm chart's dependencies are declared in Chart.yaml [chunk_0].,faithful
+c28,"ConfigMaps are encrypted, so I can safely store passwords in them, right?","A ConfigMap stores non-sensitive configuration as key-value pairs that Pods can consume as environment variables or mounted files.
+
+A Secret holds sensitive data such as passwords or tokens; by default it is only base64-encoded, not encrypted, at rest.
+
+On this platform, Kubernetes Secrets are encrypted at rest using a KMS provider configured on the API server, rather than left as plain base64.","No, ConfigMaps are not encrypted and are meant for non-sensitive data. Passwords should be stored in Secrets, which on this platform are encrypted at rest using a KMS provider [chunk_0][chunk_1][chunk_2].",faithful
+c29,How can Argo CD get a Helm chart running on a cluster?,"GitOps tools such as Argo CD can deploy Helm charts by rendering them and continuously syncing the output to a cluster.
+
+Running 'helm install' renders a chart's templates with the merged values and applies the resulting manifests to the Kubernetes cluster.
+
+A Helm release is a specific instance of a chart deployed to a cluster, tracked by a unique release name.",Argo CD can get a Helm chart running on a cluster by rendering the Helm chart and continuously syncing the rendered output to the cluster [chunk_0]. It also automatically runs 'helm install' commands to apply the chart templates directly to the Kubernetes cluster.,unfaithful
