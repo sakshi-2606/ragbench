@@ -1,0 +1,212 @@
+{
+  "c00": {
+    "item_id": "sh_12",
+    "slice": "single_hop",
+    "source": "real",
+    "construction_label": "faithful",
+    "judge_faithful": true
+  },
+  "c01": {
+    "item_id": "un_4",
+    "slice": "unanswerable",
+    "source": "fabricate",
+    "construction_label": "unfaithful",
+    "judge_faithful": false
+  },
+  "c02": {
+    "item_id": "cc_2",
+    "slice": "conflicting_context",
+    "source": "inject",
+    "construction_label": "unfaithful",
+    "judge_faithful": true
+  },
+  "c03": {
+    "item_id": "cc_5",
+    "slice": "conflicting_context",
+    "source": "real",
+    "construction_label": "faithful",
+    "judge_faithful": true
+  },
+  "c04": {
+    "item_id": "cc_3",
+    "slice": "conflicting_context",
+    "source": "real",
+    "construction_label": "faithful",
+    "judge_faithful": true
+  },
+  "c05": {
+    "item_id": "adv_7",
+    "slice": "adversarial",
+    "source": "inject",
+    "construction_label": "unfaithful",
+    "judge_faithful": false
+  },
+  "c06": {
+    "item_id": "cc_4",
+    "slice": "conflicting_context",
+    "source": "inject",
+    "construction_label": "unfaithful",
+    "judge_faithful": false
+  },
+  "c07": {
+    "item_id": "cc_7",
+    "slice": "conflicting_context",
+    "source": "real",
+    "construction_label": "faithful",
+    "judge_faithful": true
+  },
+  "c08": {
+    "item_id": "mh_8",
+    "slice": "multi_hop",
+    "source": "inject",
+    "construction_label": "unfaithful",
+    "judge_faithful": false
+  },
+  "c09": {
+    "item_id": "adv_5",
+    "slice": "adversarial",
+    "source": "real",
+    "construction_label": "faithful",
+    "judge_faithful": true
+  },
+  "c10": {
+    "item_id": "sh_1",
+    "slice": "single_hop",
+    "source": "inject",
+    "construction_label": "unfaithful",
+    "judge_faithful": false
+  },
+  "c11": {
+    "item_id": "sh_4",
+    "slice": "single_hop",
+    "source": "real",
+    "construction_label": "faithful",
+    "judge_faithful": true
+  },
+  "c12": {
+    "item_id": "un_9",
+    "slice": "unanswerable",
+    "source": "fabricate",
+    "construction_label": "unfaithful",
+    "judge_faithful": false
+  },
+  "c13": {
+    "item_id": "mh_7",
+    "slice": "multi_hop",
+    "source": "real",
+    "construction_label": "faithful",
+    "judge_faithful": true
+  },
+  "c14": {
+    "item_id": "mh_6",
+    "slice": "multi_hop",
+    "source": "inject",
+    "construction_label": "unfaithful",
+    "judge_faithful": true
+  },
+  "c15": {
+    "item_id": "mh_1",
+    "slice": "multi_hop",
+    "source": "inject",
+    "construction_label": "unfaithful",
+    "judge_faithful": false
+  },
+  "c16": {
+    "item_id": "sh_6",
+    "slice": "single_hop",
+    "source": "real",
+    "construction_label": "faithful",
+    "judge_faithful": true
+  },
+  "c17": {
+    "item_id": "adv_4",
+    "slice": "adversarial",
+    "source": "real",
+    "construction_label": "faithful",
+    "judge_faithful": true
+  },
+  "c18": {
+    "item_id": "sh_3",
+    "slice": "single_hop",
+    "source": "inject",
+    "construction_label": "unfaithful",
+    "judge_faithful": false
+  },
+  "c19": {
+    "item_id": "sh_13",
+    "slice": "single_hop",
+    "source": "real",
+    "construction_label": "faithful",
+    "judge_faithful": true
+  },
+  "c20": {
+    "item_id": "mh_4",
+    "slice": "multi_hop",
+    "source": "inject",
+    "construction_label": "unfaithful",
+    "judge_faithful": false
+  },
+  "c21": {
+    "item_id": "sh_5",
+    "slice": "single_hop",
+    "source": "real",
+    "construction_label": "faithful",
+    "judge_faithful": true
+  },
+  "c22": {
+    "item_id": "adv_8",
+    "slice": "adversarial",
+    "source": "inject",
+    "construction_label": "unfaithful",
+    "judge_faithful": false
+  },
+  "c23": {
+    "item_id": "adv_1",
+    "slice": "adversarial",
+    "source": "inject",
+    "construction_label": "unfaithful",
+    "judge_faithful": false
+  },
+  "c24": {
+    "item_id": "cc_8",
+    "slice": "conflicting_context",
+    "source": "real",
+    "construction_label": "faithful",
+    "judge_faithful": true
+  },
+  "c25": {
+    "item_id": "un_1",
+    "slice": "unanswerable",
+    "source": "fabricate",
+    "construction_label": "unfaithful",
+    "judge_faithful": false
+  },
+  "c26": {
+    "item_id": "sh_11",
+    "slice": "single_hop",
+    "source": "real",
+    "construction_label": "faithful",
+    "judge_faithful": true
+  },
+  "c27": {
+    "item_id": "sh_10",
+    "slice": "single_hop",
+    "source": "real",
+    "construction_label": "faithful",
+    "judge_faithful": true
+  },
+  "c28": {
+    "item_id": "adv_3",
+    "slice": "adversarial",
+    "source": "real",
+    "construction_label": "faithful",
+    "judge_faithful": true
+  },
+  "c29": {
+    "item_id": "mh_10",
+    "slice": "multi_hop",
+    "source": "inject",
+    "construction_label": "unfaithful",
+    "judge_faithful": false
+  }
+}
