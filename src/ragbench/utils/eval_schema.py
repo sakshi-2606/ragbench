@@ -8,6 +8,8 @@ gold-answer-dependent flags that /query deliberately leaves out. The report
 then rolls those up into aggregate rates.
 
 Scoring mirrors run_benchmark.py exactly — no new metrics in this slice.
+Each item result now also carries its slice + difficulty tags, so per-slice /
+per-difficulty breakdowns can be computed later.
 """
 
 from __future__ import annotations
@@ -26,6 +28,10 @@ class EvalItemResult(BaseModel):
     question: str
     gold_answer: Optional[str] = None
     is_answerable: bool                 # gold_answer is not None
+
+    # tags carried from the dataset item (for per-slice / per-difficulty views)
+    slice: Optional[str] = None
+    difficulty: Optional[str] = None
 
     record: QueryRecord                 # the full per-query record
 

@@ -7,7 +7,8 @@ files for the dashboard to read later).
 
 For each dataset item it calls run_query() — so every eval item gets the same
 rich per-query record the /query endpoint returns — then layers on the
-gold-answer-dependent flags. Scoring is identical to run_benchmark.py.
+gold-answer-dependent flags. Scoring is identical to run_benchmark.py. Each
+item's slice + difficulty tags are carried onto the result.
 """
 
 from __future__ import annotations
@@ -55,6 +56,8 @@ def _score_item(bi: BenchItem, record) -> EvalItemResult:
         question=bi.question,
         gold_answer=bi.gold_answer,
         is_answerable=is_answerable,
+        slice=bi.slice.value if bi.slice else None,
+        difficulty=bi.difficulty.value if bi.difficulty else None,
         record=record,
         faithful=faithful,
         refused=refused,
