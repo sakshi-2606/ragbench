@@ -101,6 +101,9 @@ class QueryRecord(BaseModel):
     # --- answer ---
     answer: str
     answer_model: str
+    answer_prompt_version: Optional[str] = None
+    # chunk ids the answer cited, parsed from the answer text (empty when none)
+    cited_chunk_ids: List[str] = []
 
     # --- judge ---
     judge: JudgeVerdict
