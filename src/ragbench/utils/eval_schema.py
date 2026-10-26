@@ -1,10 +1,10 @@
 """
-Structured result schema for a full eval run (the /eval counterpart to the
-per-query QueryRecord).
+Structured result schema for a full eval run.
 
-The report carries the overall aggregates, per-slice and per-difficulty
-breakdowns, and a `confidence` block (Wilson CIs for each rate). It is stamped
-with both provenance keys — config_version and dataset_version + dataset_hash.
+Carries overall aggregates, per-slice/per-difficulty breakdowns, Wilson CIs
+(`confidence`), and — new in WS1 — retrieval ranking metrics per item plus a
+`retrieval` summary (precision@k / recall@k / MRR / NDCG@k over labeled items).
+Stamped with config_version and dataset_version + dataset_hash.
 """
 
 from __future__ import annotations
@@ -16,6 +16,14 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from ragbench.utils.run_schema import QueryRecord
+
+
+class RetrievalMetrics(BaseModel):
+    n_relevant: int
+    mrr: float
+    precision: Dict[str, float]   # keyed by k: {"3":.., "5":.., "10":..}
+    recall: Dict[str, float]
+    ndcg: Dict[str, float]
 
 
 class EvalItemResult(BaseModel):
@@ -35,6 +43,9 @@ class EvalItemResult(BaseModel):
     false_refusal: Optional[bool] = None
     hallucination: Optional[bool] = None
     correct_refusal: Optional[bool] = None
+
+    # retrieval ranking vs relevant_chunk_ids (None for items with no relevant set)
+    retrieval: Optional[RetrievalMetrics] = None
 
 
 class GroupMetrics(BaseModel):
@@ -75,6 +86,7 @@ class EvalReport(BaseModel):
     aggregates: EvalAggregates
     by_slice: Dict[str, GroupMetrics] = {}
     by_difficulty: Dict[str, GroupMetrics] = {}
-    # Wilson CIs for each rate (aggregate + per-slice + per-difficulty).
     confidence: Dict[str, Any] = {}
+    # retrieval ranking summary: {"overall": {...}, "by_slice": {slice: {...}}}
+    retrieval: Dict[str, Any] = {}
     items: List[EvalItemResult] = []

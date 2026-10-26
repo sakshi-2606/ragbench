@@ -1,9 +1,9 @@
 """
 End-to-end eval orchestration.
 
-Loads a frozen, tagged eval set (validating tags + hash), runs run_query() on
-each item, scores it, rolls up overall aggregates + per-slice / per-difficulty
-breakdowns, and attaches Wilson confidence intervals for every rate.
+Loads a frozen, tagged eval set, runs run_query() on each item, scores it, and
+rolls up: overall aggregates, per-slice / per-difficulty breakdowns, Wilson CIs,
+and retrieval ranking metrics (per item + an overall/per-slice summary).
 """
 
 from __future__ import annotations
@@ -18,11 +18,13 @@ from ragbench.pipeline.run_query import run_query
 from ragbench.utils.config import RunConfig
 from ragbench.eval.dataset import load_evalset
 from ragbench.eval.bootstrap import compute_confidence
+from ragbench.eval.ranking import ranking_metrics
 from ragbench.utils.eval_schema import (
     EvalItemResult,
     EvalAggregates,
     EvalReport,
     GroupMetrics,
+    RetrievalMetrics,
 )
 
 
@@ -39,6 +41,11 @@ def _score_item(bi: BenchItem, record) -> EvalItemResult:
         hallucination = not refused
         correct_refusal = refused
 
+    # retrieval ranking: dense retrieval order vs the item's relevant chunk ids
+    ranked_ids = [c.payload.get("chunk_id") for c in record.retrieved_chunks]
+    rm = ranking_metrics(ranked_ids, bi.relevant_chunk_ids)
+    retrieval = RetrievalMetrics(**rm) if rm else None
+
     return EvalItemResult(
         id=bi.id,
         question=bi.question,
@@ -53,6 +60,7 @@ def _score_item(bi: BenchItem, record) -> EvalItemResult:
         false_refusal=false_refusal,
         hallucination=hallucination,
         correct_refusal=correct_refusal,
+        retrieval=retrieval,
     )
 
 
@@ -110,18 +118,37 @@ def _breakdown(items: List[EvalItemResult], key) -> Dict[str, GroupMetrics]:
 def _confidence(items: List[EvalItemResult]) -> dict:
     item_dicts = [
         {
-            "is_answerable": it.is_answerable,
-            "faithful": it.faithful,
-            "answer_success": it.answer_success,
-            "false_refusal": it.false_refusal,
-            "hallucination": it.hallucination,
-            "correct_refusal": it.correct_refusal,
-            "slice": it.slice,
-            "difficulty": it.difficulty,
+            "is_answerable": it.is_answerable, "faithful": it.faithful,
+            "answer_success": it.answer_success, "false_refusal": it.false_refusal,
+            "hallucination": it.hallucination, "correct_refusal": it.correct_refusal,
+            "slice": it.slice, "difficulty": it.difficulty,
         }
         for it in items
     ]
     return compute_confidence(item_dicts)
+
+
+def _avg_retrieval(rms: List[Optional[RetrievalMetrics]]) -> Optional[dict]:
+    rms = [r for r in rms if r is not None]
+    if not rms:
+        return None
+    n = len(rms)
+    ks = list(rms[0].precision.keys())
+    return {
+        "n": n,
+        "mrr": sum(r.mrr for r in rms) / n,
+        "precision": {k: sum(r.precision[k] for r in rms) / n for k in ks},
+        "recall": {k: sum(r.recall[k] for r in rms) / n for k in ks},
+        "ndcg": {k: sum(r.ndcg[k] for r in rms) / n for k in ks},
+    }
+
+
+def _retrieval_summary(items: List[EvalItemResult]) -> dict:
+    slices = sorted({it.slice for it in items if it.slice})
+    return {
+        "overall": _avg_retrieval([it.retrieval for it in items]),
+        "by_slice": {s: _avg_retrieval([it.retrieval for it in items if it.slice == s]) for s in slices},
+    }
 
 
 def _persist(report: EvalReport, persist_dir: str) -> None:
@@ -159,6 +186,7 @@ def run_eval(
         by_slice=_breakdown(items, lambda it: it.slice),
         by_difficulty=_breakdown(items, lambda it: it.difficulty),
         confidence=_confidence(items),
+        retrieval=_retrieval_summary(items),
         items=items,
     )
 
