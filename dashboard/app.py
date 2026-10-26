@@ -25,7 +25,7 @@ st.caption("Read-only view of a saved eval run")
 
 files = sorted(
     (f for f in glob.glob(os.path.join(RESULTS_DIR, "eval_*.json")) if "summary" not in os.path.basename(f)),
-    reverse=True,
+    key=os.path.getmtime, reverse=True,
 )
 if not files:
     st.warning(f"No eval_*.json files found in {RESULTS_DIR}/. Run an eval first.")
