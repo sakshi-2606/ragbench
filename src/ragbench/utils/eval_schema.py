@@ -50,6 +50,15 @@ class EvalItemResult(BaseModel):
     context_precision: Optional[float] = None   # relevant / context size
     context_recall: Optional[float] = None      # relevant kept / relevant total
 
+    # answer quality on ANSWERABLE items (judged; None for unanswerable)
+    correctness: Optional[str] = None   # correct / partially_correct / incorrect
+    relevance: Optional[str] = None     # relevant / partial / irrelevant
+
+    # citation accuracy on ANSWERED, labelled items (None for refusals/unanswerable)
+    citation_validity: Optional[float] = None    # cited that are in context / cited
+    citation_precision: Optional[float] = None   # cited that are relevant / cited
+    citation_recall: Optional[float] = None      # relevant that were cited / relevant
+
 
 class GroupMetrics(BaseModel):
     n: int
@@ -90,6 +99,8 @@ class EvalReport(BaseModel):
     by_slice: Dict[str, GroupMetrics] = {}
     by_difficulty: Dict[str, GroupMetrics] = {}
     confidence: Dict[str, Any] = {}
-    retrieval: Dict[str, Any] = {}      # dense-ranking summary
-    context: Dict[str, Any] = {}        # reranked-context precision/recall summary
+    retrieval: Dict[str, Any] = {}        # dense-ranking summary
+    context: Dict[str, Any] = {}          # reranked-context precision/recall summary
+    answer_quality: Dict[str, Any] = {}   # correctness/relevance summary (answerable)
+    citations: Dict[str, Any] = {}        # citation validity/precision/recall summary
     items: List[EvalItemResult] = []

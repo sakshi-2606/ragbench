@@ -13,7 +13,7 @@ import sys
 from ragbench.utils.config import RunConfig
 from ragbench.eval.run_eval import run_eval
 
-DATASET = "benchmarks/evalset_v1.jsonl"
+DATASET = "benchmarks/evalset_v2.jsonl"
 
 
 def main():
@@ -28,10 +28,18 @@ def main():
         f.write(report.model_dump_json(indent=2))
 
     a = report.aggregates
+    ov = report.retrieval.get("overall") if report.retrieval else None
+    cit = report.citations.get("overall") if report.citations else None
     print(f"saved {out_path}")
     print(f"  config_version={cfg.version}  collection={cfg.retrieval.collection}  embed={cfg.retrieval.embed_model}")
     print(f"  faithfulness={a.faithfulness_rate:.2f}  answer_success={a.answer_success_rate:.2f}  "
           f"false_refusal={a.false_refusal_rate:.2f}  avg_latency={a.avg_total_latency_ms:.0f}ms")
+    if ov:
+        print(f"  retrieval: mrr={ov['mrr']:.2f}  recall@10={ov['recall']['10']:.2f}  ndcg@10={ov['ndcg']['10']:.2f}")
+    if cit:
+        fmt = lambda x: f"{x:.2f}" if x is not None else "—"
+        print(f"  citations: validity={fmt(cit['validity'])}  precision={fmt(cit['precision'])}  "
+              f"recall={fmt(cit['recall'])}  (cited {cit['n_cited']}/{cit['n']})")
 
 
 if __name__ == "__main__":
