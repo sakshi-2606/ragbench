@@ -1,0 +1,152 @@
+{"id": "helm_001", "text": "A Helm chart is a package of pre-configured Kubernetes resource templates, bundled with a default values file and metadata declared in Chart.yaml.", "source": "helm-docs"}
+{"id": "helm_002", "text": "Helm templates are written in the Go template language and are rendered into concrete Kubernetes manifests at install time.", "source": "helm-docs"}
+{"id": "helm_003", "text": "Helm injects configuration into templates through the .Values object, whose contents come from values.yaml.", "source": "helm-docs"}
+{"id": "helm_004", "text": "Values in a Helm chart can be overridden at install time with --set flags or by passing additional files with -f/--values.", "source": "helm-docs"}
+{"id": "helm_005", "text": "Running 'helm install' renders a chart's templates with the merged values and applies the resulting manifests to the Kubernetes cluster.", "source": "helm-docs"}
+{"id": "helm_006", "text": "A Helm release is a specific instance of a chart deployed to a cluster, tracked by a unique release name.", "source": "helm-docs"}
+{"id": "helm_007", "text": "Helm chart dependencies are declared in Chart.yaml and fetched into the charts/ subdirectory before rendering.", "source": "helm-docs"}
+{"id": "helm_008", "text": "In Helm 2, releases were managed by a cluster-side server component called Tiller, which held broad permissions.", "source": "helm-v2-notes"}
+{"id": "helm_009", "text": "Helm 3 removed Tiller entirely; it runs fully client-side and stores release state as Secrets in the target namespace.", "source": "helm-v3-notes"}
+{"id": "helm_010", "text": "A values.yaml file is optional in a Helm chart; a chart whose templates define no required values can install without one.", "source": "helm-v3-notes"}
+{"id": "k8s_001", "text": "A Kubernetes Deployment manages a ReplicaSet, which in turn keeps a desired number of identical Pods running.", "source": "k8s-docs"}
+{"id": "k8s_002", "text": "A Deployment enables declarative rollouts and rollbacks by creating and updating the ReplicaSet it owns.", "source": "k8s-docs"}
+{"id": "k8s_003", "text": "If the replicas field is not set, a Kubernetes Deployment defaults to a single replica.", "source": "k8s-docs"}
+{"id": "k8s_004", "text": "A Kubernetes Service provides a stable network endpoint and load-balances traffic across the Pods selected by its label selector.", "source": "k8s-docs"}
+{"id": "k8s_005", "text": "A ConfigMap stores non-sensitive configuration as key-value pairs that Pods can consume as environment variables or mounted files.", "source": "k8s-docs"}
+{"id": "k8s_006", "text": "A Secret holds sensitive data such as passwords or tokens; by default it is only base64-encoded, not encrypted, at rest.", "source": "k8s-docs"}
+{"id": "k8s_007", "text": "A namespace partitions cluster resources, scoping names and providing a boundary for quotas and access control.", "source": "k8s-docs"}
+{"id": "k8s_008", "text": "A Pod is the smallest deployable unit in Kubernetes and can hold one or more tightly coupled containers sharing a network namespace.", "source": "k8s-docs"}
+{"id": "k8s_009", "text": "Kustomize is an alternative to Helm that patches raw Kubernetes manifests with overlays instead of using a templating language.", "source": "k8s-docs"}
+{"id": "plat_001", "text": "The platform base chart overrides the Kubernetes default and sets replicas to 3 for every service unless a team opts out.", "source": "platform-notes"}
+{"id": "plat_002", "text": "On this platform, Kubernetes Secrets are encrypted at rest using a KMS provider configured on the API server, rather than left as plain base64.", "source": "platform-notes"}
+{"id": "tf_001", "text": "Terraform state maps real-world infrastructure to the resources declared in configuration and stores metadata Terraform uses to plan changes.", "source": "terraform-docs"}
+{"id": "tf_002", "text": "Terraform state can be stored locally in a terraform.tfstate file or in a remote backend such as an S3 bucket.", "source": "terraform-docs"}
+{"id": "tf_003", "text": "A remote Terraform backend enables state locking so that concurrent runs do not corrupt shared state.", "source": "terraform-docs"}
+{"id": "tf_004", "text": "Terraform configuration is written in HCL across .tf files that declare providers, resources, and variables.", "source": "terraform-docs"}
+{"id": "tf_005", "text": "terraform plan previews the changes Terraform will make, while terraform apply executes them and updates the state.", "source": "terraform-docs"}
+{"id": "tf_006", "text": "Terraform input variables are declared with variable blocks and can be set via tfvars files, -var flags, or environment variables.", "source": "terraform-docs"}
+{"id": "tf_007", "text": "Unlike Helm, Terraform does not use a values.yaml file; its configuration lives in .tf files and its runtime inputs in variables.", "source": "terraform-docs"}
+{"id": "gitops_001", "text": "GitOps tools such as Argo CD can deploy Helm charts by rendering them and continuously syncing the output to a cluster.", "source": "gitops-notes"}
+{"id": "dk_001", "text": "A Docker image is a read-only template built from a Dockerfile, and a container is a running instance of that image.", "source": "docker-docs"}
+{"id": "dk_002", "text": "Each instruction in a Dockerfile creates a new image layer, and layers are cached to speed up subsequent builds.", "source": "docker-docs"}
+{"id": "dk_003", "text": "A container registry such as Docker Hub or ECR stores and distributes built images by repository and tag.", "source": "docker-docs"}
+{"id": "dk_004", "text": "Multi-stage Docker builds use several FROM stages so the final image contains only runtime artifacts, not build tooling.", "source": "docker-docs"}
+{"id": "dk_005", "text": "The ENTRYPOINT instruction sets the executable a container runs, while CMD provides default arguments to it.", "source": "docker-docs"}
+{"id": "dk_006", "text": "Docker volumes persist data outside a container's writable layer so it survives container restarts and removals.", "source": "docker-docs"}
+{"id": "dk_007", "text": "Docker Compose defines multi-container applications in a compose file, wiring services, networks, and volumes together.", "source": "docker-docs"}
+{"id": "dk_008", "text": "Bind mounts map a host directory into a container, which is useful for local development but ties the container to the host layout.", "source": "docker-docs"}
+{"id": "dk_009", "text": "An image tag labels a specific build of a repository; 'latest' is just a conventional tag, not a guarantee of the newest image.", "source": "docker-docs"}
+{"id": "dk_010", "text": "The Docker daemon builds, runs, and manages containers, while the docker CLI talks to it over a socket or TCP.", "source": "docker-docs"}
+{"id": "dk_011", "text": "A .dockerignore file excludes paths from the build context so large or sensitive files are not sent to the daemon.", "source": "docker-docs"}
+{"id": "dk_012", "text": "Containers on the same Docker network can reach each other by service name through Docker's embedded DNS.", "source": "docker-docs"}
+{"id": "ci_001", "text": "A CI/CD pipeline is a sequence of automated stages that build, test, and deploy code on each change.", "source": "cicd-docs"}
+{"id": "ci_002", "text": "GitHub Actions workflows are defined in YAML under .github/workflows and are triggered by repository events such as push or pull_request.", "source": "cicd-docs"}
+{"id": "ci_003", "text": "A workflow job runs on a runner, and steps within a job execute sequentially in the same environment.", "source": "cicd-docs"}
+{"id": "ci_004", "text": "Build artifacts produced in one CI job can be uploaded and downloaded by later jobs in the same pipeline.", "source": "cicd-docs"}
+{"id": "ci_005", "text": "Caching dependencies between CI runs avoids re-downloading packages and speeds up builds.", "source": "cicd-docs"}
+{"id": "ci_006", "text": "A matrix build runs the same job across combinations of parameters, such as multiple language versions.", "source": "cicd-docs"}
+{"id": "ci_007", "text": "CI secrets are stored encrypted and injected into jobs as environment variables, never committed to the repository.", "source": "cicd-docs"}
+{"id": "ci_008", "text": "A merge gate blocks a pull request from merging until required checks, such as tests, pass.", "source": "cicd-docs"}
+{"id": "ci_009", "text": "Jenkins pipelines are defined in a Jenkinsfile and executed by agents connected to the Jenkins controller.", "source": "cicd-docs"}
+{"id": "ci_010", "text": "A deployment stage promotes a built artifact to an environment such as staging or production, often with manual approval.", "source": "cicd-docs"}
+{"id": "ci_011", "text": "Blue-green deployment runs two production environments and switches traffic to the new one once it is verified.", "source": "cicd-docs"}
+{"id": "ci_012", "text": "A canary release routes a small fraction of traffic to a new version before rolling it out fully.", "source": "cicd-docs"}
+{"id": "mon_001", "text": "Prometheus collects metrics by scraping HTTP endpoints that expose time-series data at a fixed interval.", "source": "monitoring-docs"}
+{"id": "mon_002", "text": "A Prometheus counter only increases, while a gauge can go up and down to represent a current value.", "source": "monitoring-docs"}
+{"id": "mon_003", "text": "A histogram metric buckets observations so percentiles like p95 latency can be computed.", "source": "monitoring-docs"}
+{"id": "mon_004", "text": "Grafana queries data sources such as Prometheus and renders dashboards of panels and charts.", "source": "monitoring-docs"}
+{"id": "mon_005", "text": "Alerting rules fire when a query crosses a threshold for a sustained duration, notifying an alertmanager.", "source": "monitoring-docs"}
+{"id": "mon_006", "text": "Observability is often described through three signals: metrics, logs, and traces.", "source": "monitoring-docs"}
+{"id": "mon_007", "text": "OpenTelemetry provides vendor-neutral APIs and SDKs for emitting traces, metrics, and logs.", "source": "monitoring-docs"}
+{"id": "mon_008", "text": "A distributed trace follows a request across services using a shared trace ID and per-operation spans.", "source": "monitoring-docs"}
+{"id": "mon_009", "text": "An SLO sets a target for a service-level indicator, and the error budget is the allowed shortfall from it.", "source": "monitoring-docs"}
+{"id": "mon_010", "text": "PromQL is the query language used to select and aggregate Prometheus time series.", "source": "monitoring-docs"}
+{"id": "mon_011", "text": "Exporters translate third-party system metrics into the Prometheus exposition format.", "source": "monitoring-docs"}
+{"id": "mon_012", "text": "Log aggregation ships logs from many sources into a central store for search and correlation.", "source": "monitoring-docs"}
+{"id": "net_001", "text": "DNS resolves human-readable hostnames into IP addresses that clients connect to.", "source": "networking-docs"}
+{"id": "net_002", "text": "A load balancer distributes incoming connections across multiple backend servers to share load.", "source": "networking-docs"}
+{"id": "net_003", "text": "A Kubernetes Ingress exposes HTTP and HTTPS routes from outside the cluster to Services inside it.", "source": "networking-docs"}
+{"id": "net_004", "text": "TLS encrypts traffic in transit and authenticates the server using a certificate signed by a trusted authority.", "source": "networking-docs"}
+{"id": "net_005", "text": "A firewall allows or blocks traffic based on rules over source, destination, port, and protocol.", "source": "networking-docs"}
+{"id": "net_006", "text": "CIDR notation expresses an IP range as an address and a prefix length, such as 10.0.0.0/16.", "source": "networking-docs"}
+{"id": "net_007", "text": "A reverse proxy sits in front of servers and forwards client requests to them, often adding TLS or caching.", "source": "networking-docs"}
+{"id": "net_008", "text": "A service mesh adds a sidecar proxy to each service to handle traffic routing, retries, and mTLS.", "source": "networking-docs"}
+{"id": "net_009", "text": "HTTP status codes in the 2xx range indicate success, 4xx client errors, and 5xx server errors.", "source": "networking-docs"}
+{"id": "net_010", "text": "A Kubernetes NetworkPolicy restricts which Pods can communicate with each other at the network layer.", "source": "networking-docs"}
+{"id": "aws_001", "text": "Amazon EC2 provides resizable virtual machine instances in the cloud.", "source": "aws-docs"}
+{"id": "aws_002", "text": "Amazon S3 is an object storage service that stores files as objects in buckets.", "source": "aws-docs"}
+{"id": "aws_003", "text": "AWS IAM manages users, roles, and policies that control access to AWS resources.", "source": "aws-docs"}
+{"id": "aws_004", "text": "A VPC is an isolated virtual network in AWS where you launch resources into subnets.", "source": "aws-docs"}
+{"id": "aws_005", "text": "AWS Lambda runs code in response to events without provisioning servers.", "source": "aws-docs"}
+{"id": "aws_006", "text": "Amazon EKS is a managed Kubernetes control plane that runs the Kubernetes API for you.", "source": "aws-docs"}
+{"id": "aws_007", "text": "Amazon RDS is a managed relational database service handling backups, patching, and failover.", "source": "aws-docs"}
+{"id": "aws_008", "text": "Amazon CloudWatch collects metrics, logs, and alarms for AWS resources and applications.", "source": "aws-docs"}
+{"id": "aws_009", "text": "An auto-scaling group adjusts the number of EC2 instances based on demand or a schedule.", "source": "aws-docs"}
+{"id": "aws_010", "text": "AWS regions contain multiple availability zones, which are isolated data-center groups.", "source": "aws-docs"}
+{"id": "aws_011", "text": "A security group acts as a stateful virtual firewall controlling inbound and outbound traffic to an instance.", "source": "aws-docs"}
+{"id": "aws_012", "text": "An Elastic Load Balancer spreads traffic across targets in multiple availability zones.", "source": "aws-docs"}
+{"id": "git_001", "text": "A Git commit records a snapshot of the staged changes along with a message and parent reference.", "source": "git-docs"}
+{"id": "git_002", "text": "A branch in Git is a movable pointer to a commit, used to develop features in isolation.", "source": "git-docs"}
+{"id": "git_003", "text": "Merging combines the histories of two branches, creating a merge commit when they have diverged.", "source": "git-docs"}
+{"id": "git_004", "text": "Rebasing replays commits from one branch onto another to produce a linear history.", "source": "git-docs"}
+{"id": "git_005", "text": "A remote is a named reference to another copy of the repository, such as origin on a hosting service.", "source": "git-docs"}
+{"id": "git_006", "text": "A pull request proposes merging one branch into another and is the unit of code review on hosting platforms.", "source": "git-docs"}
+{"id": "git_007", "text": "A Git tag marks a specific commit, commonly used to label releases.", "source": "git-docs"}
+{"id": "git_008", "text": "git stash temporarily shelves uncommitted changes so the working directory is clean.", "source": "git-docs"}
+{"id": "git_009", "text": "git cherry-pick applies the changes from a specific commit onto the current branch.", "source": "git-docs"}
+{"id": "git_010", "text": "The reflog records where HEAD and branch tips have pointed, allowing recovery of lost commits.", "source": "git-docs"}
+{"id": "lnx_001", "text": "In Linux, each running program is a process identified by a PID and owned by a user.", "source": "linux-docs"}
+{"id": "lnx_002", "text": "File permissions in Linux are expressed as read, write, and execute bits for owner, group, and others.", "source": "linux-docs"}
+{"id": "lnx_003", "text": "systemd manages services as units and controls their startup, dependencies, and logging.", "source": "linux-docs"}
+{"id": "lnx_004", "text": "cron schedules commands to run at fixed times or intervals via crontab entries.", "source": "linux-docs"}
+{"id": "lnx_005", "text": "A pipe connects the standard output of one command to the standard input of the next.", "source": "linux-docs"}
+{"id": "lnx_006", "text": "grep searches text for lines matching a pattern, and sed and awk transform streams of text.", "source": "linux-docs"}
+{"id": "lnx_007", "text": "Environment variables pass configuration to processes and are inherited by child processes.", "source": "linux-docs"}
+{"id": "lnx_008", "text": "A signal such as SIGTERM asks a process to terminate, while SIGKILL forces it to stop.", "source": "linux-docs"}
+{"id": "lnx_009", "text": "Package managers like apt and yum install, update, and remove software from configured repositories.", "source": "linux-docs"}
+{"id": "lnx_010", "text": "Standard streams are stdin, stdout, and stderr, referenced by file descriptors 0, 1, and 2.", "source": "linux-docs"}
+{"id": "db_001", "text": "Relational databases store data in tables with fixed schemas and relate rows with keys.", "source": "database-docs"}
+{"id": "db_002", "text": "NoSQL databases trade rigid schemas for flexible document, key-value, or wide-column models.", "source": "database-docs"}
+{"id": "db_003", "text": "An index speeds up lookups on a column at the cost of extra storage and slower writes.", "source": "database-docs"}
+{"id": "db_004", "text": "A transaction groups operations so they all commit or all roll back, following ACID properties.", "source": "database-docs"}
+{"id": "db_005", "text": "A JOIN combines rows from two tables based on a related column between them.", "source": "database-docs"}
+{"id": "db_006", "text": "Normalization organizes tables to reduce redundancy, while denormalization trades it for read speed.", "source": "database-docs"}
+{"id": "db_007", "text": "Replication copies data to replicas for availability and read scaling, often with a primary for writes.", "source": "database-docs"}
+{"id": "db_008", "text": "Sharding partitions data across multiple database nodes to scale beyond one machine.", "source": "database-docs"}
+{"id": "db_009", "text": "A connection pool reuses database connections to avoid the cost of opening one per request.", "source": "database-docs"}
+{"id": "db_010", "text": "A schema migration applies versioned changes to a database's structure in a controlled order.", "source": "database-docs"}
+{"id": "sec_001", "text": "Role-based access control grants permissions to roles, and users inherit permissions from their roles.", "source": "security-docs"}
+{"id": "sec_002", "text": "OAuth 2.0 lets an application obtain delegated access to a resource on behalf of a user without sharing passwords.", "source": "security-docs"}
+{"id": "sec_003", "text": "A JWT is a signed token carrying claims that a server can verify without a database lookup.", "source": "security-docs"}
+{"id": "sec_004", "text": "The principle of least privilege grants each identity only the permissions it needs.", "source": "security-docs"}
+{"id": "sec_005", "text": "A secrets manager stores and rotates credentials, issuing them to applications at runtime.", "source": "security-docs"}
+{"id": "sec_006", "text": "Encryption in transit protects data on the network, while encryption at rest protects stored data.", "source": "security-docs"}
+{"id": "sec_007", "text": "Vulnerability scanning inspects images and dependencies for known security issues.", "source": "security-docs"}
+{"id": "sec_008", "text": "A Kubernetes RBAC Role grants permissions on resources within a namespace, bound to subjects by a RoleBinding.", "source": "security-docs"}
+{"id": "sec_009", "text": "Mutual TLS authenticates both the client and the server using certificates.", "source": "security-docs"}
+{"id": "sec_010", "text": "Audit logs record who did what and when, supporting investigation and compliance.", "source": "security-docs"}
+{"id": "k8sx_001", "text": "A DaemonSet runs a copy of a Pod on every node, commonly used for log and metrics agents.", "source": "k8s-docs"}
+{"id": "k8sx_002", "text": "A StatefulSet manages Pods with stable network identities and persistent storage for stateful apps.", "source": "k8s-docs"}
+{"id": "k8sx_003", "text": "A Job runs Pods to completion for batch work, and a CronJob runs Jobs on a schedule.", "source": "k8s-docs"}
+{"id": "k8sx_004", "text": "A HorizontalPodAutoscaler scales the number of Pods based on observed metrics such as CPU.", "source": "k8s-docs"}
+{"id": "k8sx_005", "text": "A PersistentVolumeClaim requests storage, which is satisfied by a PersistentVolume in the cluster.", "source": "k8s-docs"}
+{"id": "k8sx_006", "text": "A node is a worker machine in Kubernetes that runs Pods and is managed by the control plane.", "source": "k8s-docs"}
+{"id": "k8sx_007", "text": "Taints on a node repel Pods unless the Pods have a matching toleration.", "source": "k8s-docs"}
+{"id": "k8sx_008", "text": "Labels are key-value pairs attached to objects, and selectors match objects by their labels.", "source": "k8s-docs"}
+{"id": "k8sx_009", "text": "An init container runs to completion before the main containers in a Pod start.", "source": "k8s-docs"}
+{"id": "k8sx_010", "text": "A liveness probe restarts an unhealthy container, while a readiness probe gates traffic to it.", "source": "k8s-docs"}
+{"id": "k8sx_011", "text": "Resource requests reserve CPU and memory for a Pod, and limits cap how much it can use.", "source": "k8s-docs"}
+{"id": "k8sx_012", "text": "The kube-scheduler assigns Pods to nodes based on resource availability and constraints.", "source": "k8s-docs"}
+{"id": "py_001", "text": "A Python virtual environment isolates a project's dependencies from the system interpreter.", "source": "python-docs"}
+{"id": "py_002", "text": "pip installs Python packages from an index such as PyPI into the active environment.", "source": "python-docs"}
+{"id": "py_003", "text": "pytest discovers and runs test functions and reports assertions that fail.", "source": "python-docs"}
+{"id": "py_004", "text": "Type hints annotate expected types and are checked by tools like mypy, not at runtime.", "source": "python-docs"}
+{"id": "py_005", "text": "async and await let Python run I/O-bound coroutines concurrently on an event loop.", "source": "python-docs"}
+{"id": "py_006", "text": "A decorator wraps a function to extend its behavior without modifying its body.", "source": "python-docs"}
+{"id": "py_007", "text": "The logging module emits records at levels such as DEBUG, INFO, WARNING, and ERROR.", "source": "python-docs"}
+{"id": "py_008", "text": "A requirements file or pyproject.toml pins a project's dependencies for reproducible installs.", "source": "python-docs"}
+{"id": "msg_001", "text": "Apache Kafka is a distributed log that stores streams of records in partitioned, ordered topics.", "source": "messaging-docs"}
+{"id": "msg_002", "text": "A message queue decouples producers from consumers by buffering messages until they are processed.", "source": "messaging-docs"}
+{"id": "msg_003", "text": "In publish-subscribe, publishers send messages to a topic and all subscribers receive a copy.", "source": "messaging-docs"}
+{"id": "msg_004", "text": "A Kafka consumer group splits partitions among its members so each record is processed once per group.", "source": "messaging-docs"}
+{"id": "msg_005", "text": "Event-driven architectures react to events asynchronously rather than through direct calls.", "source": "messaging-docs"}
