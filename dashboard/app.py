@@ -228,6 +228,36 @@ if aq_ov:
                   for c in ["correct", "partial", "incorrect", "relevant", "irrelevant"]}
         st.dataframe(adf, use_container_width=True, hide_index=True, column_config=aq_fmt)
 
+# ---- citation accuracy ----
+cit = report.get("citations", {})
+cit_ov = cit.get("overall")
+if cit_ov:
+    st.divider()
+    st.subheader("Citation accuracy (answered, labelled items)")
+
+    def _pct(x):
+        return f"{x * 100:.0f}%" if x is not None else "—"
+
+    cc = st.columns(4)
+    cc[0].metric("Validity", _pct(cit_ov["validity"]))
+    cc[0].caption("cited ids that were in context (no fabrication)")
+    cc[1].metric("Precision", _pct(cit_ov["precision"]))
+    cc[1].caption("cited ids that are relevant (vs minimal labels)")
+    cc[2].metric("Recall", _pct(cit_ov["recall"]))
+    cc[2].caption("relevant chunks that got cited (≤ context recall)")
+    cc[3].metric("Cited", f"{cit_ov['n_cited']}/{cit_ov['n']}")
+    cc[3].caption("answered items citing ≥1 source")
+
+    cbs = cit.get("by_slice", {})
+    rows = [{"slice": s, "validity": m["validity"], "precision": m["precision"],
+             "recall": m["recall"], "n_cited": m["n_cited"], "n": m["n"]}
+            for s, m in cbs.items() if m]
+    if rows:
+        cdf = pd.DataFrame(rows).sort_values("recall")
+        cit_fmt = {c: st.column_config.NumberColumn(format="%.2f")
+                   for c in ["validity", "precision", "recall"]}
+        st.dataframe(cdf, use_container_width=True, hide_index=True, column_config=cit_fmt)
+
 st.divider()
 
 # ---- per-item table ----
