@@ -206,3 +206,7 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 .env
+
+.DS_Store
+results/
+/smoke_*.py

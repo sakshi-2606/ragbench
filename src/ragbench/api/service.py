@@ -5,12 +5,10 @@ Thin FastAPI wrapper over the pipeline.
   POST /query   -> run one question, return the full QueryRecord
   POST /eval    -> run a dataset, return the full EvalReport (and persist files)
 
-All real work lives in run_query() / run_eval() — this file is only HTTP
-plumbing. Config is loaded ONCE at startup.
+All real work lives in run_query() / run_eval(). Config loaded once at startup.
 
-Run from the repo root (so relative paths resolve):
+Run from the repo root:
     uvicorn ragbench.api.service:app --port 8000
-Interactive docs: http://localhost:8000/docs
 """
 
 from __future__ import annotations
@@ -29,7 +27,7 @@ from ragbench.eval.run_eval import run_eval
 
 CONFIG_PATH = os.getenv("RAGBENCH_CONFIG", "configs/query.yaml")
 
-app = FastAPI(title="RAGBench Query Service", version="0.3.0")
+app = FastAPI(title="RAGBench Query Service", version="0.4.0")
 config = RunConfig.from_yaml(CONFIG_PATH)
 
 
@@ -38,28 +36,23 @@ class QueryRequest(BaseModel):
 
 
 class EvalRequest(BaseModel):
-    dataset_path: str = "benchmarks/evalset_v1.jsonl"   # frozen, tagged eval set
-    persist: bool = True            # write result files to results/
+    dataset_path: str = "benchmarks/evalset_v2.jsonl"   # frozen, tagged, relevance-labeled set
+    persist: bool = True
 
 
 @app.get("/health")
 def health() -> dict:
-    """Liveness check — also reports which config the service is running."""
     return {"status": "ok", "config_version": config.version}
 
 
 @app.post("/query", response_model=QueryRecord)
 def query(req: QueryRequest) -> QueryRecord:
-    """Run one query end to end and return the full structured record."""
     return run_query(req.question, config)
 
 
 @app.post("/eval", response_model=EvalReport)
 def eval_dataset(req: EvalRequest) -> EvalReport:
     """Run the whole dataset and return the full eval report.
-
-    NOTE: synchronous — the request stays open until the run finishes
-    (~2-3 min for the 50-item set). A background-job design is a later slice.
-    """
+    Synchronous — the request stays open until the run finishes (~2-3 min)."""
     persist_dir = "results" if req.persist else None
     return run_eval(req.dataset_path, config, persist_dir=persist_dir)

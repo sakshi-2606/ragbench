@@ -13,10 +13,11 @@ will be a thin wrapper that just calls this and returns the record as JSON.
 
 from __future__ import annotations
 
+import re
 import time
 
 from ragbench.pipeline.simple_rag import run_rag
-from ragbench.generation.answer import generate_answer
+from ragbench.generation.answer import generate_answer, ANSWER_PROMPT_VERSION
 from ragbench.eval.judge import judge_faithfulness
 from ragbench.eval.refusal import is_refusal
 from ragbench.eval.pricing import estimate_cost
@@ -29,6 +30,10 @@ from ragbench.utils.run_schema import (
     StageLatency,
     TokenUsage,
 )
+
+# Citations the model emits inline, e.g. [k8s_001]. Captures any bracketed
+# id-like token so fabricated citations (ids not in context) are caught too.
+_CITE_RE = re.compile(r"\[([A-Za-z0-9_]+)\]")
 
 
 def _ms() -> int:
@@ -50,14 +55,23 @@ def run_query(question: str, config: RunConfig) -> QueryRecord:
     )
     context_chunks = retr["context_chunks"]
 
+    # ids of the chunks the model will actually see, in the same order as the
+    # text (reranked results when rerank is on, else the dense candidates).
+    ctx_src = retr.get("reranked_results") or retr["dense_results"]
+    context_ids = [r.get("payload", {}).get("chunk_id") for r in ctx_src]
+
     # ---- stage 3: answer (timed here — this is the gap benchmark left) ----
     t = _ms()
     answer, ans_usage = generate_answer(
         question=question,
         context_chunks=context_chunks,
         model=config.answer.model,
+        context_ids=context_ids,
     )
     answer_ms = _ms() - t
+
+    # citations the model actually made, parsed from the answer text
+    cited_chunk_ids = sorted(set(_CITE_RE.findall(answer)))
 
     # ---- stage 4: judge (timed here too) ----
     t = _ms()
@@ -135,6 +149,8 @@ def run_query(question: str, config: RunConfig) -> QueryRecord:
         reranked_chunks=reranked_chunks,
         answer=answer,
         answer_model=config.answer.model,
+        answer_prompt_version=ANSWER_PROMPT_VERSION,
+        cited_chunk_ids=cited_chunk_ids,
         judge=JudgeVerdict(
             faithful=verdict.get("faithful"),
             confidence=verdict.get("confidence"),

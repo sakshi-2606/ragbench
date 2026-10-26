@@ -2,11 +2,10 @@
 Build (freeze) the manifest for an eval set.
 
 Reads the dataset, asserts every item is tagged, and writes a sidecar
-<dataset>.manifest.json capturing the version, content hash, item count, and
-per-slice / per-difficulty distribution. Re-run this whenever you intentionally
+<dataset>.manifest.json capturing version, content hash, item count, and the
+per-slice / per-difficulty distribution. Re-run whenever you intentionally
 change the dataset (and bump VERSION for a real new version).
 
-Run from repo root:
     python scripts/build_manifest.py
 """
 
@@ -16,8 +15,8 @@ from collections import Counter
 
 from ragbench.eval.dataset import _raw_items, content_hash, manifest_path_for
 
-DATASET = "benchmarks/evalset_v1.jsonl"
-VERSION = "v1"
+DATASET = "benchmarks/evalset_v2.jsonl"
+VERSION = "v2"
 
 
 def main():
@@ -35,6 +34,7 @@ def main():
         "content_hash": content_hash(raw),
         "n_answerable": sum(1 for r in raw if r.get("gold_answer") is not None),
         "n_unanswerable": sum(1 for r in raw if r.get("gold_answer") is None),
+        "n_with_relevance_labels": sum(1 for r in raw if r.get("relevant_chunk_ids")),
         "by_slice": dict(Counter(r["slice"] for r in raw)),
         "by_difficulty": dict(Counter(r["difficulty"] for r in raw)),
     }

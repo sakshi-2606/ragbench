@@ -1,14 +1,12 @@
 """
 Benchmark/eval item schema.
 
-Each eval item now declares two orthogonal tags:
-  - slice:      the KIND of challenge (single_hop, multi_hop, unanswerable,
-                conflicting_context, adversarial)
-  - difficulty: how hard it is (easy, medium, hard)
-
-Both are Optional for now so the legacy benchmarks/sample.jsonl (untagged) still
-loads during the transition. Once evalset_v1 is authored and frozen, the manifest
-step will assert every item in a versioned set is fully tagged.
+Each eval item carries two orthogonal tags (slice, difficulty) and now a
+`relevant_chunk_ids` list — the ground-truth set of corpus chunk IDs that are
+relevant to the question. Ranking metrics (precision@k, recall@k, MRR, NDCG)
+score retrieved chunk IDs against this set. Empty for unanswerable items (no
+relevant chunk exists); one ID for single-hop; several for multi-hop /
+conflicting-context.
 """
 
 from __future__ import annotations
@@ -39,6 +37,7 @@ class BenchItem(BaseModel):
     gold_answer: Optional[str] = None
     must_contain: List[str] = []
     gold_doc_contains: List[str] = []
-    # eval-rigor tags (Optional during transition; required for a frozen set)
     slice: Optional[Slice] = None
     difficulty: Optional[Difficulty] = None
+    # ground-truth relevant corpus chunk IDs (for retrieval ranking metrics)
+    relevant_chunk_ids: List[str] = []

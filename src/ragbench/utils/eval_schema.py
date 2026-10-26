@@ -1,10 +1,10 @@
 """
-Structured result schema for a full eval run (the /eval counterpart to the
-per-query QueryRecord).
+Structured result schema for a full eval run.
 
-The report carries the overall aggregates, per-slice and per-difficulty
-breakdowns, and a `confidence` block (Wilson CIs for each rate). It is stamped
-with both provenance keys — config_version and dataset_version + dataset_hash.
+Carries overall aggregates, per-slice/per-difficulty breakdowns, Wilson CIs
+(`confidence`), retrieval ranking metrics (`retrieval`) on the dense top-10,
+and context precision/recall (`context`) on the reranked context the LLM
+actually sees. Stamped with config_version and dataset_version + dataset_hash.
 """
 
 from __future__ import annotations
@@ -16,6 +16,14 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from ragbench.utils.run_schema import QueryRecord
+
+
+class RetrievalMetrics(BaseModel):
+    n_relevant: int
+    mrr: float
+    precision: Dict[str, float]
+    recall: Dict[str, float]
+    ndcg: Dict[str, float]
 
 
 class EvalItemResult(BaseModel):
@@ -35,6 +43,21 @@ class EvalItemResult(BaseModel):
     false_refusal: Optional[bool] = None
     hallucination: Optional[bool] = None
     correct_refusal: Optional[bool] = None
+
+    # retrieval ranking on the dense top-10 (vs relevant_chunk_ids)
+    retrieval: Optional[RetrievalMetrics] = None
+    # context quality on the RERANKED context actually fed to the LLM
+    context_precision: Optional[float] = None   # relevant / context size
+    context_recall: Optional[float] = None      # relevant kept / relevant total
+
+    # answer quality on ANSWERABLE items (judged; None for unanswerable)
+    correctness: Optional[str] = None   # correct / partially_correct / incorrect
+    relevance: Optional[str] = None     # relevant / partial / irrelevant
+
+    # citation accuracy on ANSWERED, labelled items (None for refusals/unanswerable)
+    citation_validity: Optional[float] = None    # cited that are in context / cited
+    citation_precision: Optional[float] = None   # cited that are relevant / cited
+    citation_recall: Optional[float] = None      # relevant that were cited / relevant
 
 
 class GroupMetrics(BaseModel):
@@ -75,6 +98,9 @@ class EvalReport(BaseModel):
     aggregates: EvalAggregates
     by_slice: Dict[str, GroupMetrics] = {}
     by_difficulty: Dict[str, GroupMetrics] = {}
-    # Wilson CIs for each rate (aggregate + per-slice + per-difficulty).
     confidence: Dict[str, Any] = {}
+    retrieval: Dict[str, Any] = {}        # dense-ranking summary
+    context: Dict[str, Any] = {}          # reranked-context precision/recall summary
+    answer_quality: Dict[str, Any] = {}   # correctness/relevance summary (answerable)
+    citations: Dict[str, Any] = {}        # citation validity/precision/recall summary
     items: List[EvalItemResult] = []
