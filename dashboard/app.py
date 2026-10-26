@@ -183,6 +183,51 @@ if ov:
         rank_fmt = {c: st.column_config.NumberColumn(format="%.2f") for c in ["mrr", "recall@10", "ndcg@10", "ctx_recall"]}
         st.dataframe(sdf, use_container_width=True, hide_index=True, column_config=rank_fmt)
 
+# ---- answer quality (correctness + relevance) ----
+aq = report.get("answer_quality", {})
+aq_ov = aq.get("overall")
+if aq_ov:
+    st.divider()
+    st.subheader("Answer quality (answerable items)")
+    cc = aq_ov["correctness"]
+    rr = aq_ov["relevance"]
+    a = st.columns(4)
+    a[0].metric("Correct (strict)", f"{aq_ov['correct_rate'] * 100:.0f}%")
+    a[0].caption(f"partial {cc['partially_correct'] * 100:.0f}%  ·  incorrect {cc['incorrect'] * 100:.0f}%")
+    a[1].metric("Relevant (strict)", f"{aq_ov['relevant_rate'] * 100:.0f}%")
+    a[1].caption(f"partial {rr['partial'] * 100:.0f}%  ·  irrelevant {rr['irrelevant'] * 100:.0f}%")
+    a[2].metric("Judged items", aq_ov["n"])
+    a[2].caption(f"judge prompt {aq.get('prompt_version', '?')}")
+
+    aq_bs = aq.get("by_slice", {})
+    rows = [{"slice": s,
+             "correct": m["correctness"]["correct"],
+             "partial": m["correctness"]["partially_correct"],
+             "incorrect": m["correctness"]["incorrect"],
+             "relevant": m["relevance"]["relevant"],
+             "irrelevant": m["relevance"]["irrelevant"],
+             "n": m["n"]}
+            for s, m in aq_bs.items() if m]
+    if rows:
+        adf = pd.DataFrame(rows).sort_values("correct")
+        comp = adf.melt(id_vars=["slice", "n"], value_vars=["correct", "partial", "incorrect"],
+                        var_name="bucket", value_name="frac")
+        order = ["correct", "partial", "incorrect"]
+        colors = alt.Scale(domain=order, range=["#3b9a57", "#d6a93b", "#c25b56"])
+        st.caption("Correctness composition by slice — green correct, amber partial, red incorrect (watch adversarial).")
+        bar = (alt.Chart(comp).mark_bar()
+               .encode(x=alt.X("slice", sort=list(adf["slice"]), title=None),
+                       y=alt.Y("frac", title="share", scale=alt.Scale(domain=[0, 1])),
+                       color=alt.Color("bucket", sort=order, scale=colors,
+                                       legend=alt.Legend(title=None, orient="top")),
+                       order=alt.Order("bucket", sort="ascending"),
+                       tooltip=["slice", "bucket", "frac", "n"])
+               .properties(height=260))
+        st.altair_chart(bar, use_container_width=True)
+        aq_fmt = {c: st.column_config.NumberColumn(format="%.2f")
+                  for c in ["correct", "partial", "incorrect", "relevant", "irrelevant"]}
+        st.dataframe(adf, use_container_width=True, hide_index=True, column_config=aq_fmt)
+
 st.divider()
 
 # ---- per-item table ----
