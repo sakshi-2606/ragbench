@@ -2,9 +2,9 @@
 Structured result schema for a full eval run.
 
 Carries overall aggregates, per-slice/per-difficulty breakdowns, Wilson CIs
-(`confidence`), and — new in WS1 — retrieval ranking metrics per item plus a
-`retrieval` summary (precision@k / recall@k / MRR / NDCG@k over labeled items).
-Stamped with config_version and dataset_version + dataset_hash.
+(`confidence`), retrieval ranking metrics (`retrieval`) on the dense top-10,
+and context precision/recall (`context`) on the reranked context the LLM
+actually sees. Stamped with config_version and dataset_version + dataset_hash.
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ from ragbench.utils.run_schema import QueryRecord
 class RetrievalMetrics(BaseModel):
     n_relevant: int
     mrr: float
-    precision: Dict[str, float]   # keyed by k: {"3":.., "5":.., "10":..}
+    precision: Dict[str, float]
     recall: Dict[str, float]
     ndcg: Dict[str, float]
 
@@ -44,8 +44,11 @@ class EvalItemResult(BaseModel):
     hallucination: Optional[bool] = None
     correct_refusal: Optional[bool] = None
 
-    # retrieval ranking vs relevant_chunk_ids (None for items with no relevant set)
+    # retrieval ranking on the dense top-10 (vs relevant_chunk_ids)
     retrieval: Optional[RetrievalMetrics] = None
+    # context quality on the RERANKED context actually fed to the LLM
+    context_precision: Optional[float] = None   # relevant / context size
+    context_recall: Optional[float] = None      # relevant kept / relevant total
 
 
 class GroupMetrics(BaseModel):
@@ -87,6 +90,6 @@ class EvalReport(BaseModel):
     by_slice: Dict[str, GroupMetrics] = {}
     by_difficulty: Dict[str, GroupMetrics] = {}
     confidence: Dict[str, Any] = {}
-    # retrieval ranking summary: {"overall": {...}, "by_slice": {slice: {...}}}
-    retrieval: Dict[str, Any] = {}
+    retrieval: Dict[str, Any] = {}      # dense-ranking summary
+    context: Dict[str, Any] = {}        # reranked-context precision/recall summary
     items: List[EvalItemResult] = []

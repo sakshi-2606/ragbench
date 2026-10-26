@@ -159,8 +159,17 @@ if ov:
     num_fmt = {c: st.column_config.NumberColumn(format="%.2f") for c in ["precision", "recall", "ndcg"]}
     st.dataframe(kdf, use_container_width=True, hide_index=True, column_config=num_fmt)
 
+    # context precision/recall on the reranked context the LLM actually sees
+    cx = report.get("context", {}).get("overall")
+    if cx:
+        cc = st.columns(4)
+        cc[0].metric("Context precision", f"{cx['precision']:.2f}"); cc[0].caption("relevant share of the reranked context")
+        cc[1].metric("Context recall", f"{cx['recall']:.2f}"); cc[1].caption("relevant chunks kept after rerank")
+
+    cbs = report.get("context", {}).get("by_slice", {})
     bs = ret.get("by_slice", {})
-    rows = [{"slice": s, "mrr": mx["mrr"], "recall@10": mx["recall"]["10"], "ndcg@10": mx["ndcg"]["10"], "n": mx["n"]}
+    rows = [{"slice": s, "mrr": mx["mrr"], "recall@10": mx["recall"]["10"], "ndcg@10": mx["ndcg"]["10"],
+             "ctx_recall": (cbs.get(s) or {}).get("recall"), "n": mx["n"]}
             for s, mx in bs.items() if mx]
     if rows:
         sdf = pd.DataFrame(rows).sort_values("mrr")
@@ -171,7 +180,7 @@ if ov:
                        tooltip=["slice", "mrr", "recall@10", "ndcg@10", "n"])
                .properties(height=240))
         st.altair_chart(bar, use_container_width=True)
-        rank_fmt = {c: st.column_config.NumberColumn(format="%.2f") for c in ["mrr", "recall@10", "ndcg@10"]}
+        rank_fmt = {c: st.column_config.NumberColumn(format="%.2f") for c in ["mrr", "recall@10", "ndcg@10", "ctx_recall"]}
         st.dataframe(sdf, use_container_width=True, hide_index=True, column_config=rank_fmt)
 
 st.divider()

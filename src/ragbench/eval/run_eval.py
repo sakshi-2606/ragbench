@@ -2,8 +2,8 @@
 End-to-end eval orchestration.
 
 Loads a frozen, tagged eval set, runs run_query() on each item, scores it, and
-rolls up: overall aggregates, per-slice / per-difficulty breakdowns, Wilson CIs,
-and retrieval ranking metrics (per item + an overall/per-slice summary).
+rolls up: overall aggregates, per-slice/difficulty breakdowns, Wilson CIs,
+retrieval ranking (dense top-10), and context precision/recall (reranked context).
 """
 
 from __future__ import annotations
@@ -41,10 +41,21 @@ def _score_item(bi: BenchItem, record) -> EvalItemResult:
         hallucination = not refused
         correct_refusal = refused
 
-    # retrieval ranking: dense retrieval order vs the item's relevant chunk ids
+    # retrieval ranking on the dense top-10
     ranked_ids = [c.payload.get("chunk_id") for c in record.retrieved_chunks]
     rm = ranking_metrics(ranked_ids, bi.relevant_chunk_ids)
     retrieval = RetrievalMetrics(**rm) if rm else None
+
+    # context precision/recall on the RERANKED context actually fed to the LLM
+    context_precision = context_recall = None
+    rel = set(bi.relevant_chunk_ids)
+    if rel:
+        ctx_chunks = record.reranked_chunks or record.retrieved_chunks
+        ctx_ids = [c.payload.get("chunk_id") for c in ctx_chunks]
+        if ctx_ids:
+            hits = sum(1 for cid in ctx_ids if cid in rel)
+            context_precision = hits / len(ctx_ids)
+            context_recall = hits / len(rel)
 
     return EvalItemResult(
         id=bi.id,
@@ -61,6 +72,8 @@ def _score_item(bi: BenchItem, record) -> EvalItemResult:
         hallucination=hallucination,
         correct_refusal=correct_refusal,
         retrieval=retrieval,
+        context_precision=context_precision,
+        context_recall=context_recall,
     )
 
 
@@ -151,6 +164,22 @@ def _retrieval_summary(items: List[EvalItemResult]) -> dict:
     }
 
 
+def _avg_context(sub: List[EvalItemResult]) -> Optional[dict]:
+    ps = [it.context_precision for it in sub if it.context_precision is not None]
+    rs = [it.context_recall for it in sub if it.context_recall is not None]
+    if not ps:
+        return None
+    return {"n": len(ps), "precision": sum(ps) / len(ps), "recall": sum(rs) / len(rs)}
+
+
+def _context_summary(items: List[EvalItemResult]) -> dict:
+    slices = sorted({it.slice for it in items if it.slice})
+    return {
+        "overall": _avg_context(items),
+        "by_slice": {s: _avg_context([it for it in items if it.slice == s]) for s in slices},
+    }
+
+
 def _persist(report: EvalReport, persist_dir: str) -> None:
     os.makedirs(persist_dir, exist_ok=True)
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -187,6 +216,7 @@ def run_eval(
         by_difficulty=_breakdown(items, lambda it: it.difficulty),
         confidence=_confidence(items),
         retrieval=_retrieval_summary(items),
+        context=_context_summary(items),
         items=items,
     )
 
